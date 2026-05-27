@@ -84,6 +84,8 @@ export default function PaymentGroup({
     }
   }, [isEditing, group.title, group.dateMode]);
 
+  const hasChanges = editName.trim() !== group.title || editMode !== group.dateMode;
+
   function saveGroupEdit() {
     if (editName.trim() && editName.trim() !== group.title) onRenameGroup(editName.trim());
     if (editMode !== group.dateMode) onChangeDateMode(editMode);
@@ -257,8 +259,11 @@ export default function PaymentGroup({
             >
               {confirmDelete ? "Confirmar?" : "Excluir grupo"}
             </button>
-            <button className="group-edit-action-btn save" onClick={saveGroupEdit}>
-              Salvar
+            <button
+              className="group-edit-action-btn save"
+              onClick={hasChanges ? saveGroupEdit : () => setIsEditing(false)}
+            >
+              {hasChanges ? "Salvar" : "Fechar"}
             </button>
           </div>
 

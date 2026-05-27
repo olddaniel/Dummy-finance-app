@@ -790,8 +790,8 @@
   display: flex;
   align-items: center;
   color: var(--text-muted);
-  opacity: 0.35;
-  padding: 6px 4px;  /* bigger touch target */
+  opacity: 0.55;
+  padding: 6px 6px;  /* bigger touch target */
   cursor: grab;
   touch-action: none; /* prevent scroll interfering with drag */
   -webkit-user-select: none;
