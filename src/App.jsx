@@ -35,7 +35,7 @@ function App() {
       <header className="top-bar">
         <div className="top-bar-inner">
           <span className="app-icon">💳</span>
-          <h1 className="app-title">Contas a Pagar</h1>
+          <h1 className="app-title">Finance Tracker</h1>
           <button
             className={`sort-btn${sortMode !== "manual" ? " active" : ""}`}
             onClick={cycleSortMode}

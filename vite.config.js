@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'pwa-icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
-        name: 'Contas a Pagar',
-        short_name: 'Contas',
+        name: 'Finance Tracker',
+        short_name: 'Finance',
         description: 'Controle de pagamentos mensais e anuais',
         theme_color: '#22232e',
         background_color: '#1a1b23',
