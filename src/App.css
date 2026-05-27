@@ -421,7 +421,9 @@
 /* ── Add-bill row ── */
 .item-add-btn-row {
   display: flex;
+  align-items: center;
   border-top: 1px dashed var(--border);
+  padding-right: 10px;
 }
 
 .item-add-btn {

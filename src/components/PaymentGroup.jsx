@@ -111,17 +111,6 @@ export default function PaymentGroup({
         </div>
 
         <div className="group-header-right">
-          {!isClosed && (
-            <button
-              className={`reset-btn${confirmReset ? " confirm" : ""}`}
-              onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
-              onBlur={() => setConfirmReset(false)}
-              title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
-            >
-              {confirmReset ? "Confirmar?" : resetDate ?? <ResetIcon />}
-            </button>
-          )}
-
           <button
             className={`progress-badge${isSemi ? " semi" : ""}`}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
@@ -183,6 +172,16 @@ export default function PaymentGroup({
           ) : (
             <li className="item-add-btn-row">
               <button className="item-add-btn" onClick={() => setAdding(true)}>+ Adicionar conta</button>
+              {!isSemi && (
+                <button
+                  className={`reset-btn${confirmReset ? " confirm" : ""}`}
+                  onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
+                  onBlur={() => setConfirmReset(false)}
+                  title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
+                >
+                  {confirmReset ? "Confirmar?" : resetDate ?? <ResetIcon />}
+                </button>
+              )}
             </li>
           )}
         </ul>
