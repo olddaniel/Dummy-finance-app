@@ -3,16 +3,6 @@ import { DEFAULT_PAYMENTS } from "../data";
 
 const STORAGE_KEY = "payment-tracker-state";
 
-function buildInitialChecked() {
-  const checked = {};
-  DEFAULT_PAYMENTS.forEach((group) => {
-    group.items.forEach((item) => {
-      checked[item.id] = false;
-    });
-  });
-  return checked;
-}
-
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -26,52 +16,93 @@ function loadState() {
 function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // quota exceeded — silently ignore
-  }
+  } catch { /* quota exceeded */ }
 }
 
 export function usePayments() {
-  const [checked, setChecked] = useState(() => {
-    const saved = loadState();
-    if (saved?.checked) {
-      // Merge in case new items were added to DEFAULT_PAYMENTS
-      return { ...buildInitialChecked(), ...saved.checked };
-    }
-    return buildInitialChecked();
-  });
+  const [groups,          setGroups]          = useState(() => loadState()?.groups          ?? DEFAULT_PAYMENTS.map((g) => ({ ...g, items: [...g.items] })));
+  const [checked,         setChecked]         = useState(() => loadState()?.checked         ?? {});
+  const [values,          setValues]          = useState(() => loadState()?.values          ?? {});
+  const [lastResets,      setLastResets]      = useState(() => loadState()?.lastResets      ?? {});
+  const [dates,           setDates]           = useState(() => loadState()?.dates           ?? {});
+  const [sortMode,        setSortModeState]   = useState(() => loadState()?.sortMode        ?? "manual");
+  const [collapsedGroups, setCollapsedGroups] = useState(() => loadState()?.collapsedGroups ?? {});
 
-  const [lastReset, setLastReset] = useState(() => {
-    const saved = loadState();
-    return saved?.lastReset ?? null;
-  });
-
-  // Persist on every change
   useEffect(() => {
-    saveState({ checked, lastReset });
-  }, [checked, lastReset]);
+    saveState({ groups, checked, values, lastResets, dates, sortMode, collapsedGroups });
+  }, [groups, checked, values, lastResets, dates, sortMode, collapsedGroups]);
 
   const toggle = useCallback((id) => {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
+  const setItemValue = useCallback((id, rawValue) => {
+    const num = parseFloat(rawValue);
+    setValues((prev) => ({ ...prev, [id]: isNaN(num) ? 0 : num }));
+  }, []);
+
+  const setItemDate = useCallback((id, rawValue) => {
+    const num = parseInt(rawValue, 10);
+    setDates((prev) => ({ ...prev, [id]: isNaN(num) ? null : num }));
+  }, []);
+
   const resetGroup = useCallback((groupId) => {
-    const group = DEFAULT_PAYMENTS.find((g) => g.id === groupId);
-    if (!group) return;
-    setChecked((prev) => {
-      const next = { ...prev };
-      group.items.forEach((item) => {
-        next[item.id] = false;
+    setGroups((prev) => {
+      const group = prev.find((g) => g.id === groupId);
+      if (!group) return prev;
+      setChecked((c) => {
+        const next = { ...c };
+        group.items.forEach((item) => { next[item.id] = false; });
+        return next;
       });
-      return next;
+      return prev;
     });
-    setLastReset(new Date().toISOString());
+    setLastResets((prev) => ({ ...prev, [groupId]: new Date().toISOString() }));
   }, []);
 
-  const resetAll = useCallback(() => {
-    setChecked(buildInitialChecked());
-    setLastReset(new Date().toISOString());
+  const addItem = useCallback((groupId, label) => {
+    const id = `${groupId}_${Date.now()}`;
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId ? { ...g, items: [...g.items, { id, label: label.trim() }] } : g
+      )
+    );
   }, []);
 
-  return { checked, toggle, resetGroup, resetAll, lastReset };
+  const removeItem = useCallback((groupId, itemId) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId ? { ...g, items: g.items.filter((i) => i.id !== itemId) } : g
+      )
+    );
+    setChecked((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
+    setValues((prev)  => { const n = { ...prev }; delete n[itemId]; return n; });
+    setDates((prev)   => { const n = { ...prev }; delete n[itemId]; return n; });
+  }, []);
+
+  const renameItem = useCallback((groupId, itemId, newLabel) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, items: g.items.map((i) => i.id === itemId ? { ...i, label: newLabel } : i) }
+          : g
+      )
+    );
+  }, []);
+
+  const setSortMode = useCallback((mode) => setSortModeState(mode), []);
+
+  const toggleGroupCollapsed = useCallback((groupId) => {
+    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  }, []);
+
+  return {
+    groups, checked, toggle,
+    values, setItemValue,
+    dates, setItemDate,
+    lastResets, resetGroup,
+    addItem, removeItem, renameItem,
+    sortMode, setSortMode,
+    collapsedGroups, toggleGroupCollapsed,
+  };
 }

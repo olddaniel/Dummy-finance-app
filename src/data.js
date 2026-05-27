@@ -2,7 +2,7 @@
 export const DEFAULT_PAYMENTS = [
   {
     id: "monthly",
-    title: "Pagar contas mensais",
+    title: "Mensais",
     cycle: "monthly",
     items: [
       { id: "comgas", label: "Comgas" },
@@ -18,7 +18,7 @@ export const DEFAULT_PAYMENTS = [
   },
   {
     id: "yearly",
-    title: "Pagar contas anuais",
+    title: "Anuais",
     cycle: "yearly",
     items: [
       { id: "seguro", label: "Seguro" },

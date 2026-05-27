@@ -1,96 +1,76 @@
-import { useState } from "react";
-import { DEFAULT_PAYMENTS } from "./data";
 import { usePayments } from "./hooks/usePayments";
 import PaymentGroup from "./components/PaymentGroup";
 import "./App.css";
 
-function formatDate(iso) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const SORT_CYCLE = ["manual", "value", "date"];
+
+function SortIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path d="M1 3h10M1 6h6.5M1 9h3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function App() {
-  const { checked, toggle, resetGroup, resetAll, lastReset } = usePayments();
-  const [confirmResetAll, setConfirmResetAll] = useState(false);
+  const {
+    groups, checked, toggle,
+    values, setItemValue,
+    dates, setItemDate,
+    lastResets, resetGroup,
+    addItem, removeItem, renameItem,
+    sortMode, setSortMode,
+    collapsedGroups, toggleGroupCollapsed,
+  } = usePayments();
 
-  const totalItems = DEFAULT_PAYMENTS.reduce((sum, g) => sum + g.items.length, 0);
-  const totalDone = Object.values(checked).filter(Boolean).length;
-
-  function handleResetAll() {
-    if (confirmResetAll) {
-      resetAll();
-      setConfirmResetAll(false);
-    } else {
-      setConfirmResetAll(true);
-    }
+  function cycleSortMode() {
+    const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
+    setSortMode(next);
   }
+
+  const sortLabel = sortMode === "value" ? "R$↓" : sortMode === "date" ? "data↑" : null;
 
   return (
     <div className="app">
-      {/* Top bar */}
       <header className="top-bar">
         <div className="top-bar-inner">
-          <div className="app-title-block">
-            <span className="app-icon">💳</span>
-            <h1 className="app-title">Contas a Pagar</h1>
-          </div>
-
-          <div className="top-bar-right">
-            <span className="global-progress">
-              {totalDone}/{totalItems} pago{totalDone !== 1 ? "s" : ""}
-            </span>
-            <button
-              className={`reset-all-btn${confirmResetAll ? " confirm" : ""}`}
-              onClick={handleResetAll}
-              onBlur={() => setConfirmResetAll(false)}
-              title="Reset all cycles"
-            >
-              {confirmResetAll ? "⚠️ Confirmar?" : "↺ Reset geral"}
-            </button>
-          </div>
-        </div>
-
-        {/* Global progress bar */}
-        <div
-          className="global-progress-bar"
-          role="progressbar"
-          aria-valuenow={totalDone}
-          aria-valuemax={totalItems}
-        >
-          <div
-            className="global-progress-fill"
-            style={{
-              width: `${totalItems === 0 ? 0 : (totalDone / totalItems) * 100}%`,
-            }}
-          />
+          <span className="app-icon">💳</span>
+          <h1 className="app-title">Contas a Pagar</h1>
+          <button
+            className={`sort-btn${sortMode !== "manual" ? " active" : ""}`}
+            onClick={cycleSortMode}
+            title={
+              sortMode === "manual" ? "Ordenar por valor ou data" :
+              sortMode === "value"  ? "Ordenando por valor" : "Ordenando por data"
+            }
+          >
+            {sortLabel ?? <SortIcon />}
+          </button>
         </div>
       </header>
 
-      {/* Payment groups */}
       <main className="main">
-        {DEFAULT_PAYMENTS.map((group) => (
+        {groups.map((group) => (
           <PaymentGroup
             key={group.id}
             group={group}
             checked={checked}
             onToggle={toggle}
             onReset={() => resetGroup(group.id)}
+            values={values}
+            onValueChange={setItemValue}
+            dates={dates}
+            onDateChange={setItemDate}
+            lastReset={lastResets[group.id] ?? null}
+            onAddItem={(label) => addItem(group.id, label)}
+            onRemoveItem={(itemId) => removeItem(group.id, itemId)}
+            onRenameItem={(itemId, label) => renameItem(group.id, itemId, label)}
+            sortMode={sortMode}
+            collapsed={!!collapsedGroups[group.id]}
+            onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
           />
         ))}
       </main>
-
-      {/* Footer */}
-      {lastReset && (
-        <footer className="footer">
-          Último reset: {formatDate(lastReset)}
-        </footer>
-      )}
     </div>
   );
 }
