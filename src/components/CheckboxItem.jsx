@@ -110,8 +110,8 @@ export default function CheckboxItem({
           </span>
         )}
 
-        {/* Due date picker */}
-        <span className="item-date-wrapper" onClick={(e) => e.stopPropagation()}>
+        {/* Date + Value — grouped on the right */}
+        <span className="item-right" onClick={(e) => e.stopPropagation()}>
           <select
             className={`item-date-select${dueDate ? " has-value" : ""}`}
             value={dueDate ?? ""}
@@ -128,21 +128,20 @@ export default function CheckboxItem({
                 ))
             }
           </select>
-        </span>
 
-        {/* Value */}
-        <span className="item-value-wrapper" onClick={(e) => e.stopPropagation()}>
-          <span className="item-value-prefix">R$</span>
-          <input
-            type="number"
-            className="item-value-input"
-            min="0" step="0.01"
-            value={value}
-            onChange={(e) => onValueChange(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-            placeholder="—"
-            aria-label={`Valor estimado: ${label}`}
-          />
+          <span className="item-value-wrapper">
+            <span className="item-value-prefix">R$</span>
+            <input
+              type="number"
+              className="item-value-input"
+              min="0" step="0.01"
+              value={value}
+              onChange={(e) => onValueChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+              placeholder="—"
+              aria-label={`Valor estimado: ${label}`}
+            />
+          </span>
         </span>
       </div>
     </li>

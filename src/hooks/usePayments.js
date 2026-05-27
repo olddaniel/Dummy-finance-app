@@ -25,12 +25,12 @@ export function usePayments() {
   const [values,          setValues]          = useState(() => loadState()?.values          ?? {});
   const [lastResets,      setLastResets]      = useState(() => loadState()?.lastResets      ?? {});
   const [dates,           setDates]           = useState(() => loadState()?.dates           ?? {});
-  const [sortModes,       setSortModes]       = useState(() => loadState()?.sortModes       ?? {});
+  const [sortMode,        setSortModeState]   = useState(() => loadState()?.sortMode        ?? "manual");
   const [collapsedGroups, setCollapsedGroups] = useState(() => loadState()?.collapsedGroups ?? {});
 
   useEffect(() => {
-    saveState({ groups, checked, values, lastResets, dates, sortModes, collapsedGroups });
-  }, [groups, checked, values, lastResets, dates, sortModes, collapsedGroups]);
+    saveState({ groups, checked, values, lastResets, dates, sortMode, collapsedGroups });
+  }, [groups, checked, values, lastResets, dates, sortMode, collapsedGroups]);
 
   const toggle = useCallback((id) => {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -90,9 +90,7 @@ export function usePayments() {
     );
   }, []);
 
-  const setSortMode = useCallback((groupId, mode) => {
-    setSortModes((prev) => ({ ...prev, [groupId]: mode }));
-  }, []);
+  const setSortMode = useCallback((mode) => setSortModeState(mode), []);
 
   const toggleGroupCollapsed = useCallback((groupId) => {
     setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -104,7 +102,7 @@ export function usePayments() {
     dates, setItemDate,
     lastResets, resetGroup,
     addItem, removeItem, renameItem,
-    sortModes, setSortMode,
+    sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
   };
 }

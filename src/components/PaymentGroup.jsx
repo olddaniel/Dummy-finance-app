@@ -28,23 +28,13 @@ function ChevronIcon({ collapsed }) {
   );
 }
 
-function SortIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <path d="M1 3h10M1 6h6.5M1 9h3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-const SORT_CYCLE = ["manual", "value", "date"];
-
 export default function PaymentGroup({
   group, checked, onToggle, onReset,
   values, onValueChange,
   dates, onDateChange,
   lastReset,
   onAddItem, onRemoveItem, onRenameItem,
-  sortMode, onSortChange,
+  sortMode,
   collapsed, onToggleCollapsed,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
@@ -76,17 +66,6 @@ export default function PaymentGroup({
   const paidSum  = group.items.reduce((s, i) => s + (checked[i.id] ? values[i.id] || 0 : 0), 0);
 
   const resetDate = formatDate(lastReset);
-
-  function cycleSortMode() {
-    const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
-    onSortChange(next);
-  }
-
-  const sortLabel = sortMode === "value"
-    ? "R$↓"
-    : sortMode === "date"
-      ? (group.cycle === "monthly" ? "dia↑" : "mês↑")
-      : null; // manual → show icon
 
   function handleAdd() {
     if (!newLabel.trim()) return;
@@ -120,32 +99,18 @@ export default function PaymentGroup({
 
         <div className="group-header-right">
           {!collapsed && (
-            <>
-              <button
-                className={`reset-btn${confirmReset ? " confirm" : ""}`}
-                onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
-                onBlur={() => setConfirmReset(false)}
-                title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
-              >
-                {confirmReset ? "Confirmar?" : resetDate ?? <ResetIcon />}
-              </button>
-
-              <button
-                className={`sort-btn${sortMode !== "manual" ? " active" : ""}`}
-                onClick={cycleSortMode}
-                title={
-                  sortMode === "manual" ? "Ordenar por valor ou data" :
-                  sortMode === "value"  ? "Ordenando por valor (clique para mudar)" :
-                                         "Ordenando por data (clique para mudar)"
-                }
-              >
-                {sortLabel ?? <SortIcon />}
-              </button>
-            </>
+            <button
+              className={`reset-btn${confirmReset ? " confirm" : ""}`}
+              onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
+              onBlur={() => setConfirmReset(false)}
+              title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
+            >
+              {confirmReset ? "Confirmar?" : resetDate ?? <ResetIcon />}
+            </button>
           )}
 
           <button
-            className={`progress-badge${collapsed ? " collapsed" : ""}`}
+            className="progress-badge"
             onClick={onToggleCollapsed}
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expandir grupo" : "Recolher grupo"}

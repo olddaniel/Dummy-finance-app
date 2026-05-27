@@ -2,6 +2,16 @@ import { usePayments } from "./hooks/usePayments";
 import PaymentGroup from "./components/PaymentGroup";
 import "./App.css";
 
+const SORT_CYCLE = ["manual", "value", "date"];
+
+function SortIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path d="M1 3h10M1 6h6.5M1 9h3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function App() {
   const {
     groups, checked, toggle,
@@ -9,9 +19,16 @@ function App() {
     dates, setItemDate,
     lastResets, resetGroup,
     addItem, removeItem, renameItem,
-    sortModes, setSortMode,
+    sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
   } = usePayments();
+
+  function cycleSortMode() {
+    const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
+    setSortMode(next);
+  }
+
+  const sortLabel = sortMode === "value" ? "R$↓" : sortMode === "date" ? "data↑" : null;
 
   return (
     <div className="app">
@@ -19,6 +36,16 @@ function App() {
         <div className="top-bar-inner">
           <span className="app-icon">💳</span>
           <h1 className="app-title">Contas a Pagar</h1>
+          <button
+            className={`sort-btn${sortMode !== "manual" ? " active" : ""}`}
+            onClick={cycleSortMode}
+            title={
+              sortMode === "manual" ? "Ordenar por valor ou data" :
+              sortMode === "value"  ? "Ordenando por valor" : "Ordenando por data"
+            }
+          >
+            {sortLabel ?? <SortIcon />}
+          </button>
         </div>
       </header>
 
@@ -38,8 +65,7 @@ function App() {
             onAddItem={(label) => addItem(group.id, label)}
             onRemoveItem={(itemId) => removeItem(group.id, itemId)}
             onRenameItem={(itemId, label) => renameItem(group.id, itemId, label)}
-            sortMode={sortModes[group.id] ?? "manual"}
-            onSortChange={(mode) => setSortMode(group.id, mode)}
+            sortMode={sortMode}
             collapsed={!!collapsedGroups[group.id]}
             onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
           />

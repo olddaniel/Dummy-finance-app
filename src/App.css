@@ -50,6 +50,7 @@
   font-weight: 600;
   color: #fff;
   margin: 0;
+  flex: 1;
   letter-spacing: -0.2px;
 }
 
@@ -149,7 +150,7 @@
   }
 }
 
-/* ── Sort toggle button ── */
+/* ── Sort toggle button (top bar) ── */
 .sort-btn {
   display: flex;
   align-items: center;
@@ -194,8 +195,8 @@
   &:hover { background: var(--surface-hover); }
 }
 
-.progress-done { color: var(--green); }
-.progress-sep  { color: var(--text-muted); font-size: 10px; }
+.progress-done  { color: var(--green); }
+.progress-sep   { color: var(--text-muted); font-size: 10px; }
 .progress-total { color: var(--text-muted); }
 
 /* ── Chevron ── */
@@ -278,9 +279,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 11px 14px;
-  /* explicit background so it covers the delete zone while sliding */
   background: var(--surface);
   transition: background 0.1s;
 
@@ -313,6 +313,10 @@
   user-select: none;
   flex: 1;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Inline edit input — replaces the label span */
@@ -330,13 +334,16 @@
   &:focus { outline: none; }
 }
 
-/* ── Due date picker ── */
-.item-date-wrapper {
-  flex-shrink: 0;
+/* ── Right-side group: date + value ── */
+.item-right {
   display: flex;
   align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
+/* ── Due date picker ── */
 .item-date-select {
   -webkit-appearance: none;
   appearance: none;
@@ -347,7 +354,7 @@
   font-size: 12px;
   font-family: inherit;
   padding: 1px 0;
-  min-width: 28px;
+  min-width: 24px;
   text-align: center;
   cursor: pointer;
 
@@ -360,7 +367,6 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  flex-shrink: 0;
 }
 
 .item-value-prefix {
@@ -370,14 +376,17 @@
 }
 
 .item-value-input {
-  width: 88px;
+  field-sizing: content;
+  width: auto;
+  min-width: 2ch;
+  max-width: 9ch;
   background: transparent;
   border: none;
   border-bottom: 1px solid transparent;
   color: var(--text);
   font-size: 13px;
   font-family: inherit;
-  text-align: right;  /* number hugs the right edge of the row */
+  text-align: right;
   padding: 1px 0;
   transition: border-color 0.15s;
 
