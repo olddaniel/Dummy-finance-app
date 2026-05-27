@@ -1,0 +1,327 @@
+/* ── Design tokens ── */
+:root {
+  --bg: #1a1b23;
+  --surface: #22232e;
+  --surface-hover: #2a2b38;
+  --border: #2e2f3d;
+  --text: #d4d5e0;
+  --text-muted: #6b6d82;
+  --text-done: #4d4f60;
+  --accent: #6c7bff;
+  --accent-dark: #5564e8;
+  --green: #3ecf8e;
+  --green-dim: #1e4a38;
+  --yellow: #f5a623;
+  --red: #ff5b5b;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+/* ── Layout ── */
+.app {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar ── */
+.top-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.top-bar-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-title-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.app-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.global-progress {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Global progress bar ── */
+.global-progress-bar {
+  height: 3px;
+  background: var(--border);
+}
+
+.global-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  transition: width 0.35s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Reset-all button ── */
+.reset-all-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  &.confirm {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(255, 91, 91, 0.1);
+  }
+}
+
+/* ── Main content ── */
+.main {
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Payment group card ── */
+.payment-group {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &.all-done {
+    border-color: var(--green-dim);
+  }
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.group-checkbox {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: var(--surface-hover);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+
+  &.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+}
+
+.group-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Progress badge ── */
+.progress-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 4px 8px;
+  background: #2e2f3d;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  border: 1px solid var(--border);
+}
+
+.progress-done {
+  color: var(--green);
+}
+
+.progress-sep {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.progress-total {
+  color: var(--text-muted);
+}
+
+/* ── Per-group reset button ── */
+.reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  &.confirm {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    background: rgba(245, 166, 35, 0.1);
+  }
+}
+
+/* ── Item list ── */
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Single item ── */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  cursor: pointer;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &.item-checked .item-label {
+    color: var(--text-done);
+    text-decoration: line-through;
+    text-decoration-color: var(--text-done);
+  }
+}
+
+.item-checkbox {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  background: var(--surface-hover);
+  border: 2px solid #3a3b4d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  padding: 0;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  &.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.item-label {
+  font-size: 15px;
+  color: var(--text);
+  transition: color 0.15s;
+  user-select: none;
+  flex: 1;
+  cursor: pointer;
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 16px 20px 32px;
+}
