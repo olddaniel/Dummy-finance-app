@@ -150,6 +150,16 @@ export default function PaymentGroup({
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
         onClick={handleHeaderClick}
       >
+        <span
+          className="group-drag-handle"
+          onPointerDown={handleDragHandlePointerDown}
+          onContextMenu={handleDragHandleContextMenu}
+          role="button"
+          aria-label="Arrastar para reordenar"
+        >
+          <DragHandleIcon />
+        </span>
+
         <div className="group-title-block">
           <div className="group-title-row">
             <h2 className="group-title">{group.title}</h2>
@@ -181,15 +191,6 @@ export default function PaymentGroup({
         </div>
 
         <div className="group-header-right">
-          <span
-            className="group-drag-handle"
-            onPointerDown={handleDragHandlePointerDown}
-            onContextMenu={handleDragHandleContextMenu}
-            role="button"
-            aria-label="Arrastar para reordenar"
-          >
-            <DragHandleIcon />
-          </span>
           <button
             className={`progress-badge${isSemi ? " semi" : ""}`}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(total === 0); }}
