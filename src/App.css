@@ -361,7 +361,7 @@
   font-size: 12px;
   font-family: inherit;
   padding: 1px 0;
-  min-width: 24px;
+  width: 28px;        /* fixed — fits "31" and "Set"; keeps R$ column steady */
   text-align: center;
   cursor: pointer;
 
