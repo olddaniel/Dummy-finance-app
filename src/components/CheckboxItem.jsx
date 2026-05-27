@@ -139,6 +139,7 @@ export default function CheckboxItem({
             min="0" step="0.01"
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
             placeholder="—"
             aria-label={`Valor estimado: ${label}`}
           />
