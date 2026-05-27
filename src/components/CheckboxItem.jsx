@@ -111,8 +111,22 @@ export default function CheckboxItem({
           </span>
         )}
 
-        {/* Date + Value — grouped on the right */}
+        {/* Value + Date — grouped on the right, value first so date anchors the far edge */}
         <span className="item-right" onClick={(e) => e.stopPropagation()}>
+          <span className="item-value-wrapper">
+            <span className="item-value-prefix">R$</span>
+            <input
+              type="number"
+              className="item-value-input"
+              min="0" step="0.01"
+              value={value}
+              onChange={(e) => onValueChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+              placeholder="—"
+              aria-label={`Valor estimado: ${label}`}
+            />
+          </span>
+
           {dateMode !== "none" && (
             <select
               className={`item-date-select${dueDate ? " has-value" : ""}`}
@@ -131,20 +145,6 @@ export default function CheckboxItem({
               }
             </select>
           )}
-
-          <span className="item-value-wrapper">
-            <span className="item-value-prefix">R$</span>
-            <input
-              type="number"
-              className="item-value-input"
-              min="0" step="0.01"
-              value={value}
-              onChange={(e) => onValueChange(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-              placeholder="—"
-              aria-label={`Valor estimado: ${label}`}
-            />
-          </span>
         </span>
       </div>
     </li>

@@ -100,11 +100,43 @@
   flex: 1;
 }
 
+.group-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .group-title {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
   margin: 0;
+}
+
+.group-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 1;
+    color: var(--text);
+    background: var(--surface-hover);
+  }
+
+  &.active {
+    opacity: 1;
+    color: var(--accent);
+  }
 }
 
 /* ── Group meta (sum + reset date) ── */

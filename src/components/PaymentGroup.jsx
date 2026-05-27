@@ -39,31 +39,8 @@ export default function PaymentGroup({
   const [newLabel, setNewLabel]         = useState("");
   const inputRef = useRef(null);
 
-  // ── Group swipe-to-edit ──
-  const [isEditing, setIsEditing] = useState(false);
-  const swipeTouch = useRef({ startX: 0, startY: 0, curX: 0, dir: null });
-  const SWIPE_THRESHOLD = 55;
-
-  function handleGroupTouchStart(e) {
-    swipeTouch.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, curX: e.touches[0].clientX, dir: null };
-  }
-  function handleGroupTouchMove(e) {
-    const dx = e.touches[0].clientX - swipeTouch.current.startX;
-    const dy = e.touches[0].clientY - swipeTouch.current.startY;
-    swipeTouch.current.curX = e.touches[0].clientX;
-    if (swipeTouch.current.dir === null) {
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
-      swipeTouch.current.dir = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
-    }
-  }
-  function handleGroupTouchEnd() {
-    if (swipeTouch.current.dir !== "h") return;
-    const dx = swipeTouch.current.curX - swipeTouch.current.startX;
-    if (dx < -SWIPE_THRESHOLD) setIsEditing(true);   // swipe left → open edit
-    if (dx >  SWIPE_THRESHOLD) setIsEditing(false);  // swipe right → close edit
-  }
-
   // ── Edit panel state ──
+  const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName]   = useState(group.title);
   const [editMode, setEditMode]   = useState(group.dateMode);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -129,16 +106,29 @@ export default function PaymentGroup({
 
   return (
     <section className={`payment-group${allDone ? " all-done" : ""}${isEditing ? " editing" : ""}`}>
-      {/* Header — swipe target for edit mode */}
+      {/* Header */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
         onClick={isClosed ? () => onToggleCollapsed(total === 0) : undefined}
-        onTouchStart={handleGroupTouchStart}
-        onTouchMove={handleGroupTouchMove}
-        onTouchEnd={handleGroupTouchEnd}
       >
         <div className="group-title-block">
-          <h2 className="group-title">{group.title}</h2>
+          <div className="group-title-row">
+            <h2 className="group-title">{group.title}</h2>
+            {!isClosed && !isSemi && (
+              <button
+                className={`group-edit-btn${isEditing ? " active" : ""}`}
+                onClick={(e) => { e.stopPropagation(); setIsEditing((v) => !v); }}
+                aria-label="Editar grupo"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            )}
+          </div>
           {totalSum > 0 && (
             <div className="group-meta">
               <span className="group-sum">
