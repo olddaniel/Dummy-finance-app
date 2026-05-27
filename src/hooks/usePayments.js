@@ -3,16 +3,6 @@ import { DEFAULT_PAYMENTS } from "../data";
 
 const STORAGE_KEY = "payment-tracker-state";
 
-function buildInitialChecked() {
-  const checked = {};
-  DEFAULT_PAYMENTS.forEach((group) => {
-    group.items.forEach((item) => {
-      checked[item.id] = false;
-    });
-  });
-  return checked;
-}
-
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -26,34 +16,26 @@ function loadState() {
 function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // quota exceeded — silently ignore
-  }
+  } catch { /* quota exceeded */ }
 }
 
 export function usePayments() {
-  const [checked, setChecked] = useState(() => {
+  // Groups own the item list — starts from defaults, fully editable
+  const [groups, setGroups] = useState(() => {
     const saved = loadState();
-    if (saved?.checked) {
-      return { ...buildInitialChecked(), ...saved.checked };
-    }
-    return buildInitialChecked();
+    return saved?.groups ?? DEFAULT_PAYMENTS.map((g) => ({ ...g, items: [...g.items] }));
   });
 
-  const [values, setValues] = useState(() => {
-    const saved = loadState();
-    return saved?.values ?? {};
-  });
+  // checked / values keyed by item id — undefined treated as false / 0
+  const [checked, setChecked] = useState(() => loadState()?.checked ?? {});
+  const [values,  setValues]  = useState(() => loadState()?.values  ?? {});
 
-  // Per-group last reset timestamps: { monthly: isoString, yearly: isoString }
-  const [lastResets, setLastResets] = useState(() => {
-    const saved = loadState();
-    return saved?.lastResets ?? {};
-  });
+  // Per-group last-reset timestamps
+  const [lastResets, setLastResets] = useState(() => loadState()?.lastResets ?? {});
 
   useEffect(() => {
-    saveState({ checked, values, lastResets });
-  }, [checked, values, lastResets]);
+    saveState({ groups, checked, values, lastResets });
+  }, [groups, checked, values, lastResets]);
 
   const toggle = useCallback((id) => {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -65,15 +47,37 @@ export function usePayments() {
   }, []);
 
   const resetGroup = useCallback((groupId) => {
-    const group = DEFAULT_PAYMENTS.find((g) => g.id === groupId);
-    if (!group) return;
-    setChecked((prev) => {
-      const next = { ...prev };
-      group.items.forEach((item) => { next[item.id] = false; });
-      return next;
+    setGroups((prev) => {
+      const group = prev.find((g) => g.id === groupId);
+      if (!group) return prev;
+      setChecked((c) => {
+        const next = { ...c };
+        group.items.forEach((item) => { next[item.id] = false; });
+        return next;
+      });
+      return prev;
     });
     setLastResets((prev) => ({ ...prev, [groupId]: new Date().toISOString() }));
   }, []);
 
-  return { checked, toggle, values, setItemValue, resetGroup, lastResets };
+  const addItem = useCallback((groupId, label) => {
+    const id = `${groupId}_${Date.now()}`;
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId ? { ...g, items: [...g.items, { id, label: label.trim() }] } : g
+      )
+    );
+  }, []);
+
+  const removeItem = useCallback((groupId, itemId) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId ? { ...g, items: g.items.filter((i) => i.id !== itemId) } : g
+      )
+    );
+    setChecked((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
+    setValues((prev)  => { const n = { ...prev }; delete n[itemId]; return n; });
+  }, []);
+
+  return { groups, checked, toggle, values, setItemValue, resetGroup, lastResets, addItem, removeItem };
 }

@@ -1,10 +1,9 @@
-import { DEFAULT_PAYMENTS } from "./data";
 import { usePayments } from "./hooks/usePayments";
 import PaymentGroup from "./components/PaymentGroup";
 import "./App.css";
 
 function App() {
-  const { checked, toggle, values, setItemValue, resetGroup, lastResets } = usePayments();
+  const { groups, checked, toggle, values, setItemValue, resetGroup, lastResets, addItem, removeItem } = usePayments();
 
   return (
     <div className="app">
@@ -16,7 +15,7 @@ function App() {
       </header>
 
       <main className="main">
-        {DEFAULT_PAYMENTS.map((group) => (
+        {groups.map((group) => (
           <PaymentGroup
             key={group.id}
             group={group}
@@ -26,6 +25,8 @@ function App() {
             values={values}
             onValueChange={setItemValue}
             lastReset={lastResets[group.id] ?? null}
+            onAddItem={(label) => addItem(group.id, label)}
+            onRemoveItem={(itemId) => removeItem(group.id, itemId)}
           />
         ))}
       </main>

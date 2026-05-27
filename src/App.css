@@ -296,3 +296,101 @@
 
 .item-checked .item-value-prefix,
 .item-checked .item-value-input { color: var(--text-done); }
+
+/* ── Remove (×) button ── */
+.item-remove {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+
+  &:hover { background: rgba(255,91,91,0.12); color: #ff5b5b; }
+}
+
+/* Always visible on touch devices; hover-reveal on pointer devices */
+@media (hover: none) {
+  .item-remove { opacity: 0.45; }
+}
+.item:hover .item-remove { opacity: 1; }
+
+/* ── Add-bill row ── */
+.item-add-btn-row {
+  display: flex;
+  border-top: 1px dashed var(--border);
+}
+
+.item-add-btn {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: var(--text); background: var(--surface-hover); }
+}
+
+/* ── Add-bill inline form ── */
+.item-add-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 8px 14px;
+  border-top: 1px dashed var(--border);
+  background: var(--surface-hover);
+}
+
+.item-add-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 3px 2px;
+
+  &:focus { outline: none; }
+  &::placeholder { color: var(--text-muted); }
+}
+
+.item-add-confirm,
+.item-add-cancel {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.item-add-confirm {
+  color: var(--green);
+  &:hover:not(:disabled) { background: rgba(62,207,142,0.12); border-color: var(--green); }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+
+.item-add-cancel {
+  color: var(--text-muted);
+  &:hover { background: var(--surface-hover); color: var(--text); }
+}
