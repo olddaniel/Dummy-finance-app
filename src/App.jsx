@@ -4,8 +4,9 @@ import PaymentGroup from "./components/PaymentGroup";
 import Toast from "./components/Toast";
 import "./App.css";
 
-const SORT_CYCLE    = ["manual", "value", "date"];
+const SORT_CYCLE     = ["manual", "value", "date"];
 const TOAST_DURATION = 3500;
+const NOOP = () => {};
 
 function SortIcon() {
   return (
@@ -25,7 +26,7 @@ function App() {
     addItem, removeItem, restoreItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed, collapseAllGroups,
-    addGroup, removeGroup, renameGroup, changeGroupDateMode, reorderGroups,
+    addGroup, removeGroup, renameGroup, changeGroupDateMode, applyGroupOrder,
   } = usePayments();
 
   const [addingGroup, setAddingGroup] = useState(false);
@@ -53,71 +54,90 @@ function App() {
   }
 
   // ── Drag-to-reorder ──
-  const [draggingId, setDraggingId] = useState(null);
-  const [insertAt,   setInsertAt]   = useState(null);
-  const groupEls  = useRef({});   // groupId → DOM element
-  const dragState = useRef(null); // live copy to avoid stale closures
+  // drag = { groupId, pointerY, offsetY, floatLeft, floatWidth, floatHeight, insertAt }
+  const [drag, setDrag] = useState(null);
+  const dragRef   = useRef(null); // live mirror — avoids stale closures in event handlers
+  const groupEls  = useRef({});
 
-  // Derive display order during drag (live visual reorder)
-  const orderedGroups = useMemo(() => {
-    if (!draggingId || insertAt === null) return groups;
-    const from = groups.findIndex((g) => g.id === draggingId);
-    if (from === -1) return groups;
-    const arr = [...groups];
-    const [item] = arr.splice(from, 1);
-    arr.splice(insertAt, 0, item);
-    return arr;
-  }, [groups, draggingId, insertAt]);
+  // orderedGroups: for the main list. During drag the moving card is replaced
+  // by a placeholder at the current insertAt position.
+  const { orderedGroups, draggedGroup } = useMemo(() => {
+    if (!drag) return { orderedGroups: groups, draggedGroup: null };
+    const dragged  = groups.find((g) => g.id === drag.groupId) ?? null;
+    const without  = groups.filter((g) => g.id !== drag.groupId);
+    const at       = Math.min(drag.insertAt, without.length);
+    without.splice(at, 0, { __placeholder: true, height: drag.floatHeight });
+    return { orderedGroups: without, draggedGroup: dragged };
+  }, [groups, drag]);
 
-  function handleGroupDragStart(groupId) {
-    const idx = groups.findIndex((g) => g.id === groupId);
-    dragState.current = { groupId, insertAt: idx, groups };
-    setDraggingId(groupId);
-    setInsertAt(idx);
+  function handleGroupDragStart(groupId, pointerY) {
+    const el = groupEls.current[groupId];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const idx  = groups.findIndex((g) => g.id === groupId);
+    const state = {
+      groupId,
+      pointerY,
+      offsetY:     pointerY - rect.top,
+      floatLeft:   rect.left,
+      floatWidth:  rect.width,
+      floatHeight: rect.height,
+      insertAt:    idx,
+    };
+    dragRef.current = { ...state, groups };
+    setDrag(state);
     collapseAllGroups(groups.map((g) => g.id));
   }
 
   useEffect(() => {
-    if (!draggingId) return;
+    if (!drag) return;
 
     function onMove(e) {
       if (e.cancelable) e.preventDefault();
       const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
-      const { groups: g } = dragState.current;
-      let next = 0;
-      for (let i = 0; i < g.length; i++) {
-        const el = groupEls.current[g[i].id];
+      const { groupId, groups: snap } = dragRef.current;
+      const without = snap.filter((g) => g.id !== groupId);
+      let insertAt = 0;
+      for (let i = 0; i < without.length; i++) {
+        const el = groupEls.current[without[i].id];
         if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        if (y > rect.top + rect.height / 2) next = i + 1;
+        const r = el.getBoundingClientRect();
+        if (y > r.top + r.height / 2) insertAt = i + 1;
       }
-      next = Math.max(0, Math.min(next, g.length - 1));
-      dragState.current.insertAt = next;
-      setInsertAt(next);
+      insertAt = Math.max(0, Math.min(insertAt, without.length));
+      dragRef.current.pointerY = y;
+      dragRef.current.insertAt = insertAt;
+      setDrag((prev) => prev ? { ...prev, pointerY: y, insertAt } : null);
     }
 
     function onEnd() {
-      const { groupId, insertAt: finalIdx } = dragState.current;
-      reorderGroups(groupId, finalIdx);
-      dragState.current = null;
-      setDraggingId(null);
-      setInsertAt(null);
+      const { groupId, insertAt, groups: snap } = dragRef.current;
+      const without = snap.filter((g) => g.id !== groupId);
+      const dragged = snap.find((g) => g.id === groupId);
+      if (dragged) {
+        without.splice(Math.min(insertAt, without.length), 0, dragged);
+        applyGroupOrder(without.map((g) => g.id));
+      }
+      dragRef.current = null;
+      setDrag(null);
     }
 
-    // pointer events handle both mouse and touch uniformly
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup",   onEnd);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup",   onEnd);
-    };
-  }, [draggingId]); // eslint-disable-line react-hooks/exhaustive-deps
+    function preventScroll(e) { if (e.cancelable) e.preventDefault(); }
 
-  // Keep dragState.groups in sync while drag is live (groups shouldn't change
-  // during drag, but keeps the ref fresh just in case)
-  useEffect(() => {
-    if (dragState.current) dragState.current.groups = groups;
-  }, [groups]);
+    window.addEventListener("pointermove",  onMove,        { passive: false });
+    window.addEventListener("pointerup",    onEnd);
+    window.addEventListener("pointercancel",onEnd);
+    document.addEventListener("touchmove",  preventScroll, { passive: false });
+    return () => {
+      window.removeEventListener("pointermove",  onMove);
+      window.removeEventListener("pointerup",    onEnd);
+      window.removeEventListener("pointercancel",onEnd);
+      document.removeEventListener("touchmove",  preventScroll);
+    };
+  }, [drag?.groupId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep dragRef.groups in sync
+  useEffect(() => { if (dragRef.current) dragRef.current.groups = groups; }, [groups]);
 
   // ── Helpers ──
   function findItem(itemId) {
@@ -135,9 +155,7 @@ function App() {
     const value = values[itemId];
     const date  = dates[itemId];
     removeItem(groupId, itemId);
-    if (item) {
-      showToast(`"${item.label}" removida`, () => restoreItem(groupId, index, item, value, date));
-    }
+    if (item) showToast(`"${item.label}" removida`, () => restoreItem(groupId, index, item, value, date));
   }
 
   function handleToggle(itemId) {
@@ -145,8 +163,7 @@ function App() {
     toggle(itemId);
     if (!wasChecked) {
       const found = findItem(itemId);
-      const label = found?.item.label ?? "Conta";
-      showToast(`"${label}" paga`, () => toggle(itemId));
+      showToast(`"${found?.item.label ?? "Conta"}" paga`, () => toggle(itemId));
     }
   }
 
@@ -155,8 +172,7 @@ function App() {
     toggleSnooze(itemId);
     if (!wasSnoozed) {
       const found = findItem(itemId);
-      const label = found?.item.label ?? "Conta";
-      showToast(`"${label}" adiada`, () => toggleSnooze(itemId));
+      showToast(`"${found?.item.label ?? "Conta"}" adiada`, () => toggleSnooze(itemId));
     }
   }
 
@@ -170,19 +186,36 @@ function App() {
   function handleAddGroup() {
     if (!newGroupLabel.trim()) return;
     addGroup(newGroupLabel, newGroupDateMode);
-    setNewGroupLabel("");
-    setNewGroupDateMode("none");
-    setAddingGroup(false);
+    setNewGroupLabel(""); setNewGroupDateMode("none"); setAddingGroup(false);
+  }
+  function cancelAddGroup() {
+    setNewGroupLabel(""); setNewGroupDateMode("none"); setAddingGroup(false);
   }
 
-  function cancelAddGroup() {
-    setNewGroupLabel("");
-    setNewGroupDateMode("none");
-    setAddingGroup(false);
+  // Shared props builder to avoid duplication between list and float renders
+  function groupProps(group) {
+    return {
+      group,
+      checked, onToggle: (id) => handleToggle(id),
+      snoozed, onToggleSnooze: (id) => handleToggleSnooze(id),
+      onReset: () => resetGroup(group.id),
+      values, onValueChange: setItemValue,
+      dates,  onDateChange:  setItemDate,
+      lastReset: lastResets[group.id] ?? null,
+      onAddItem:    (label) => addItem(group.id, label),
+      onRemoveItem: (itemId) => handleRemoveItem(group.id, itemId),
+      onRenameItem: (itemId, label) => renameItem(group.id, itemId, label),
+      sortMode,
+      viewState:          collapsedGroups[group.id] ?? "open",
+      onToggleCollapsed:  () => toggleGroupCollapsed(group.id),
+      onRemoveGroup:      () => removeGroup(group.id),
+      onRenameGroup:      (t) => renameGroup(group.id, t),
+      onChangeDateMode:   (m) => changeGroupDateMode(group.id, m),
+    };
   }
 
   return (
-    <div className="app">
+    <div className={`app${drag ? " is-dragging" : ""}`}>
       <header className="top-bar">
         <div className="top-bar-inner">
           <span className="app-icon">💳</span>
@@ -201,36 +234,30 @@ function App() {
       </header>
 
       <main className="main">
-        {orderedGroups.map((group) => (
-          <PaymentGroup
-            key={group.id}
-            group={group}
-            groupRef={(el) => { groupEls.current[group.id] = el; }}
-            onDragStart={() => handleGroupDragStart(group.id)}
-            isDragging={draggingId === group.id}
-            checked={checked}
-            onToggle={(id) => handleToggle(id)}
-            snoozed={snoozed}
-            onToggleSnooze={(itemId) => handleToggleSnooze(itemId)}
-            onReset={() => resetGroup(group.id)}
-            values={values}
-            onValueChange={setItemValue}
-            dates={dates}
-            onDateChange={setItemDate}
-            lastReset={lastResets[group.id] ?? null}
-            onAddItem={(label) => addItem(group.id, label)}
-            onRemoveItem={(itemId) => handleRemoveItem(group.id, itemId)}
-            onRenameItem={(itemId, label) => renameItem(group.id, itemId, label)}
-            sortMode={sortMode}
-            viewState={collapsedGroups[group.id] ?? "open"}
-            onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
-            onRemoveGroup={() => removeGroup(group.id)}
-            onRenameGroup={(newTitle) => renameGroup(group.id, newTitle)}
-            onChangeDateMode={(mode) => changeGroupDateMode(group.id, mode)}
-          />
-        ))}
+        {orderedGroups.map((group) =>
+          group.__placeholder ? (
+            <div
+              key="__placeholder"
+              className="group-drag-placeholder"
+              style={{ height: group.height }}
+            />
+          ) : (
+            <PaymentGroup
+              key={group.id}
+              {...groupProps(group)}
+              groupRef={(el) => { groupEls.current[group.id] = el; }}
+              onDragStart={(py) => handleGroupDragStart(group.id, py)}
+              isDragging={false}
+            />
+          )
+        )}
 
-        {addingGroup ? (
+        {!addingGroup && (
+          <button className="group-add-btn" onClick={() => setAddingGroup(true)}>
+            + Adicionar grupo
+          </button>
+        )}
+        {addingGroup && (
           <div className="group-add-form">
             <input
               className="group-add-input"
@@ -252,9 +279,7 @@ function App() {
                   className={`group-add-mode-btn${newGroupDateMode === value ? " active" : ""}`}
                   onClick={() => setNewGroupDateMode(value)}
                   type="button"
-                >
-                  {label}
-                </button>
+                >{label}</button>
               ))}
             </div>
             <div className="group-add-actions">
@@ -262,12 +287,33 @@ function App() {
               <button className="item-add-cancel" onClick={cancelAddGroup} aria-label="Cancelar">✕</button>
             </div>
           </div>
-        ) : (
-          <button className="group-add-btn" onClick={() => setAddingGroup(true)}>
-            + Adicionar grupo
-          </button>
         )}
       </main>
+
+      {/* Floating card — fixed under the finger during drag */}
+      {drag && draggedGroup && (
+        <div
+          className="group-drag-float"
+          style={{
+            top:   drag.pointerY - drag.offsetY,
+            left:  drag.floatLeft,
+            width: drag.floatWidth,
+          }}
+        >
+          <PaymentGroup
+            {...groupProps(draggedGroup)}
+            groupRef={null}
+            onDragStart={NOOP}
+            isDragging={true}
+            viewState="closed"
+            onToggle={NOOP} onToggleSnooze={NOOP}
+            onReset={NOOP}  onValueChange={NOOP} onDateChange={NOOP}
+            onAddItem={NOOP} onRemoveItem={NOOP} onRenameItem={NOOP}
+            onToggleCollapsed={NOOP} onRemoveGroup={NOOP}
+            onRenameGroup={NOOP}    onChangeDateMode={NOOP}
+          />
+        </div>
+      )}
 
       <Toast
         message={toast.message}

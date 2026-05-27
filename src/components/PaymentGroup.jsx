@@ -69,7 +69,7 @@ export default function PaymentGroup({
     lpFired.current  = false;
     lpTimer.current  = setTimeout(() => {
       lpFired.current = true;
-      onDragStart?.();
+      onDragStart?.(lpOrigin.current.y);
     }, 450);
   }
 

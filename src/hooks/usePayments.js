@@ -196,14 +196,11 @@ export function usePayments() {
     );
   }, []);
 
-  const reorderGroups = useCallback((groupId, toIndex) => {
+  // Apply an explicit ordered list of group IDs (used by drag-to-reorder)
+  const applyGroupOrder = useCallback((ids) => {
     setGroups((prev) => {
-      const from = prev.findIndex((g) => g.id === groupId);
-      if (from === -1 || from === toIndex) return prev;
-      const next = [...prev];
-      const [item] = next.splice(from, 1);
-      next.splice(toIndex, 0, item);
-      return next;
+      const byId = Object.fromEntries(prev.map((g) => [g.id, g]));
+      return ids.map((id) => byId[id]).filter(Boolean);
     });
   }, []);
 
@@ -230,6 +227,6 @@ export function usePayments() {
     addItem, removeItem, restoreItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed, collapseAllGroups,
-    addGroup, removeGroup, renameGroup, changeGroupDateMode, reorderGroups,
+    addGroup, removeGroup, renameGroup, changeGroupDateMode, applyGroupOrder,
   };
 }

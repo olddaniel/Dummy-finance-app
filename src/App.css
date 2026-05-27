@@ -796,11 +796,37 @@
 }
 
 .payment-group.dragging {
-  opacity: 0.55;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0.4;
+  border-color: var(--accent);
+  transition: opacity 0.12s ease;
+}
+
+/* Floating card that follows the finger during drag */
+.group-drag-float {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.6));
+  will-change: top;
+}
+
+.group-drag-float .payment-group {
+  opacity: 1;
   transform: scale(1.02);
   border-color: var(--accent);
-  z-index: 10;
-  position: relative;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Placeholder gap where the card will be dropped */
+.group-drag-placeholder {
+  border-radius: var(--radius);
+  border: 2px dashed rgba(108, 123, 255, 0.4);
+  background: rgba(108, 123, 255, 0.05);
+  transition: height 0.1s ease;
+}
+
+/* Cursor for the whole app while dragging */
+.app.is-dragging,
+.app.is-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
 }
