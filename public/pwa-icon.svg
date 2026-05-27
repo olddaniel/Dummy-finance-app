@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="90" fill="#22232e"/>
+
+  <!-- Credit card body -->
+  <rect x="80" y="148" width="352" height="230" rx="24" fill="#6c7bff"/>
+
+  <!-- Card magnetic strip / top band -->
+  <rect x="80" y="200" width="352" height="58" fill="#5564e8"/>
+
+  <!-- Card chip -->
+  <rect x="118" y="172" width="52" height="40" rx="8" fill="#f5c842" opacity="0.9"/>
+
+  <!-- Card number dots -->
+  <circle cx="118" cy="310" r="9" fill="rgba(255,255,255,0.55)"/>
+  <circle cx="144" cy="310" r="9" fill="rgba(255,255,255,0.55)"/>
+  <circle cx="170" cy="310" r="9" fill="rgba(255,255,255,0.55)"/>
+  <circle cx="200" cy="310" r="9" fill="rgba(255,255,255,0.35)"/>
+  <circle cx="226" cy="310" r="9" fill="rgba(255,255,255,0.35)"/>
+  <circle cx="252" cy="310" r="9" fill="rgba(255,255,255,0.35)"/>
+
+  <!-- Green check badge (bottom-right) -->
+  <circle cx="358" cy="358" r="78" fill="#1a1b23"/>
+  <circle cx="358" cy="358" r="66" fill="#3ecf8e"/>
+  <path d="M326 358 l24 24 l48-48"
+        stroke="white" stroke-width="15"
+        stroke-linecap="round" stroke-linejoin="round"
+        fill="none"/>
+</svg>
