@@ -30,11 +30,42 @@ export default function PaymentGroup({
   sortMode,
   viewState = "open",
   onToggleCollapsed,
+  onRemoveGroup,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [adding, setAdding]             = useState(false);
   const [newLabel, setNewLabel]         = useState("");
   const inputRef = useRef(null);
+
+  // ── Group swipe-to-delete ──
+  const DELETE_WIDTH = 88;
+
+  const [swipeOffset,  setSwipeOffset]  = useState(0);
+  const [swipeAnimate, setSwipeAnimate] = useState(false);
+  const swipeTouch = useRef({ x: 0, y: 0, dir: null });
+  const groupRevealed = swipeOffset <= -(DELETE_WIDTH - 1);
+
+  function snapGroup(x) { setSwipeAnimate(true); setSwipeOffset(x); }
+
+  function handleGroupTouchStart(e) {
+    swipeTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null };
+    setSwipeAnimate(false);
+  }
+  function handleGroupTouchMove(e) {
+    const dx = e.touches[0].clientX - swipeTouch.current.x;
+    const dy = e.touches[0].clientY - swipeTouch.current.y;
+    if (swipeTouch.current.dir === null) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      swipeTouch.current.dir = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
+    }
+    if (swipeTouch.current.dir !== "h") return;
+    const base = groupRevealed ? -DELETE_WIDTH : 0;
+    setSwipeOffset(Math.max(-DELETE_WIDTH, Math.min(0, base + dx)));
+  }
+  function handleGroupTouchEnd() {
+    if (swipeTouch.current.dir !== "h") return;
+    snapGroup(swipeOffset <= -(DELETE_WIDTH / 2) ? -DELETE_WIDTH : 0);
+  }
 
   useEffect(() => {
     if (adding) inputRef.current?.focus();
@@ -82,7 +113,31 @@ export default function PaymentGroup({
   }
 
   return (
-    <section className={`payment-group${allDone ? " all-done" : ""}`}>
+    <div className="group-outer">
+      <button
+        className="group-delete-zone"
+        onClick={onRemoveGroup}
+        tabIndex={groupRevealed ? 0 : -1}
+        aria-label={`Excluir grupo ${group.title}`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span>Excluir</span>
+      </button>
+
+      <section
+        className={`payment-group${allDone ? " all-done" : ""}`}
+        style={{
+          transform: `translateX(${swipeOffset}px)`,
+          transition: swipeAnimate ? "transform 0.2s ease" : "none",
+        }}
+        onTouchStart={handleGroupTouchStart}
+        onTouchMove={handleGroupTouchMove}
+        onTouchEnd={handleGroupTouchEnd}
+        onClickCapture={groupRevealed ? (e) => { e.stopPropagation(); snapGroup(0); } : undefined}
+      >
       {/* Header */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
@@ -178,6 +233,7 @@ export default function PaymentGroup({
           ))}
         </ul>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }
