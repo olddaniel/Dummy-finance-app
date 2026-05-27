@@ -146,9 +146,12 @@ export default function CheckboxItem({
             aria-label="Editar nome da conta"
           />
         ) : (
-          <span className="item-label" onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(label); }}>
-            {label}
-          </span>
+          <>
+            <span className="item-label" onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(label); }}>
+              {label}
+            </span>
+            <span className="item-label-spacer" aria-hidden="true" />
+          </>
         )}
 
         {/* Value + Date — grouped on the right, value first so date anchors the far edge */}

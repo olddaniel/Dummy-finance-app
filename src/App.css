@@ -469,12 +469,18 @@
   color: var(--text);
   transition: color 0.15s;
   user-select: none;
-  flex: 1;
   cursor: pointer;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* no flex: 1 — only as wide as the text so the hit-target matches the label */
+}
+
+/* Absorbs leftover space between label and right controls without being clickable */
+.item-label-spacer {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Inline edit input — replaces the label span */
