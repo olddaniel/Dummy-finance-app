@@ -134,7 +134,7 @@ export function usePayments() {
     setDates((prev)   => { const n = { ...prev }; delete n[itemId]; return n; });
   }, []);
 
-  const restoreItem = useCallback((groupId, index, item) => {
+  const restoreItem = useCallback((groupId, index, item, value, date) => {
     setGroups((prev) =>
       prev.map((g) => {
         if (g.id !== groupId) return g;
@@ -143,6 +143,8 @@ export function usePayments() {
         return { ...g, items };
       })
     );
+    if (value !== undefined) setValues((prev) => ({ ...prev, [item.id]: value }));
+    if (date  !== undefined) setDates ((prev) => ({ ...prev, [item.id]: date  }));
   }, []);
 
   const renameItem = useCallback((groupId, itemId, newLabel) => {

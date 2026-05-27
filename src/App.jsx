@@ -65,10 +65,12 @@ function App() {
   function handleRemoveItem(groupId, itemId) {
     const group  = groups.find((g) => g.id === groupId);
     const index  = group?.items.findIndex((i) => i.id === itemId) ?? -1;
-    const item   = group?.items[index];
+    const item  = group?.items[index];
+    const value = values[itemId];
+    const date  = dates[itemId];
     removeItem(groupId, itemId);
     if (item) {
-      showToast(`"${item.label}" removida`, () => restoreItem(groupId, index, item));
+      showToast(`"${item.label}" removida`, () => restoreItem(groupId, index, item, value, date));
     }
   }
 
