@@ -24,6 +24,13 @@ export const DEFAULT_PAYMENTS = [
     items: [],
   },
   {
+    id: "savings",
+    title: "Reservas",
+    cycle: "monthly",
+    noDates: true,
+    items: [],
+  },
+  {
     id: "yearly",
     title: "Anuais",
     cycle: "yearly",
