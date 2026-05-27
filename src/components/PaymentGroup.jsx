@@ -51,7 +51,7 @@ export default function PaymentGroup({
   const paidSum  = group.items.reduce((s, i) => s + (checked[i.id] ? values[i.id] || 0 : 0), 0);
 
   const resetDate = formatDate(lastReset);
-  const hasMeta   = totalSum > 0 || resetDate;
+  const hasMeta   = totalSum > 0;
 
   function handleAdd() {
     if (!newLabel.trim()) return;
@@ -81,26 +81,21 @@ export default function PaymentGroup({
                   <span>{formatBRL(totalSum)}</span>
                 </span>
               )}
-              {resetDate && (
-                <span className="group-last-reset">
-                  {totalSum > 0 && <span className="meta-dot"> · </span>}
-                  reset {resetDate}
-                </span>
-              )}
             </div>
           )}
         </div>
 
         <div className="group-header-right">
-          <button
-            className={`reset-btn${confirmReset ? " confirm" : ""}`}
-            onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
-            onBlur={() => setConfirmReset(false)}
-            title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
-          >
-            <ResetIcon />
-            {confirmReset ? "Confirmar?" : "Reset"}
-          </button>
+          {!collapsed && (
+            <button
+              className={`reset-btn${confirmReset ? " confirm" : ""}`}
+              onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
+              onBlur={() => setConfirmReset(false)}
+              title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
+            >
+              {confirmReset ? "Confirmar?" : resetDate ? resetDate : <ResetIcon />}
+            </button>
+          )}
 
           <button
             className={`progress-badge${collapsed ? " collapsed" : ""}`}
