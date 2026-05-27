@@ -793,7 +793,7 @@
   flex-shrink: 0;
   color: var(--text-muted);
   opacity: 0.55;
-  padding: 4px 2px;
+  padding: 2px 1px;
   margin-left: 0;
   cursor: grab;
   touch-action: none; /* prevent scroll interfering with drag */
