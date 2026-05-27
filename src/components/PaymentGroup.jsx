@@ -171,6 +171,7 @@ export default function PaymentGroup({
       {/* Edit panel — slides open below header when isEditing */}
       <div className={`group-edit-panel${isEditing ? " open" : ""}`}>
         <div className="group-edit-inner">
+        <div className="group-edit-inner-content">
 
           {/* Rename */}
           <input
@@ -219,6 +220,7 @@ export default function PaymentGroup({
             </button>
           </div>
 
+        </div>
         </div>
       </div>
 
