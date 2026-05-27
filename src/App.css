@@ -705,3 +705,65 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+/* ── Undo toast ── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  background: #2e2f3d;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 12px 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 200;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.toast.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toast-message {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.toast-undo-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+
+  &:hover { opacity: 0.75; }
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--accent);
+  animation: toast-shrink linear forwards;
+}
+
+@keyframes toast-shrink {
+  from { width: 100%; }
+  to   { width: 0%;   }
+}

@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { usePayments } from "./hooks/usePayments";
 import PaymentGroup from "./components/PaymentGroup";
+import Toast from "./components/Toast";
 import "./App.css";
 
-const SORT_CYCLE = ["manual", "value", "date"];
+const SORT_CYCLE    = ["manual", "value", "date"];
+const TOAST_DURATION = 3500;
 
 function SortIcon() {
   return (
@@ -20,7 +22,7 @@ function App() {
     values, setItemValue,
     dates, setItemDate,
     lastResets, resetGroup,
-    addItem, removeItem, renameItem,
+    addItem, removeItem, restoreItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
     addGroup, removeGroup, renameGroup, changeGroupDateMode,
@@ -29,6 +31,58 @@ function App() {
   const [addingGroup, setAddingGroup] = useState(false);
   const [newGroupLabel, setNewGroupLabel] = useState("");
   const [newGroupDateMode, setNewGroupDateMode] = useState("none");
+
+  // ── Toast ──
+  const [toast, setToast]     = useState({ visible: false, message: "", undoFn: null });
+  const [toastKey, setToastKey] = useState(0);
+  const toastTimeout = useRef(null);
+
+  function showToast(message, undoFn) {
+    clearTimeout(toastTimeout.current);
+    setToastKey((k) => k + 1);
+    setToast({ visible: true, message, undoFn });
+    toastTimeout.current = setTimeout(() => {
+      setToast((t) => ({ ...t, visible: false }));
+    }, TOAST_DURATION);
+  }
+
+  function handleUndoToast() {
+    clearTimeout(toastTimeout.current);
+    toast.undoFn?.();
+    setToast((t) => ({ ...t, visible: false }));
+  }
+
+  // ── Helpers ──
+  function findItem(itemId) {
+    for (const group of groups) {
+      const item = group.items.find((i) => i.id === itemId);
+      if (item) return { group, item, index: group.items.indexOf(item) };
+    }
+    return null;
+  }
+
+  // Wrapped remove — fires instantly, shows undo toast
+  function handleRemoveItem(groupId, itemId) {
+    const group  = groups.find((g) => g.id === groupId);
+    const index  = group?.items.findIndex((i) => i.id === itemId) ?? -1;
+    const item   = group?.items[index];
+    removeItem(groupId, itemId);
+    if (item) {
+      showToast(`"${item.label}" removida`, () => restoreItem(groupId, index, item));
+    }
+  }
+
+  // Wrapped snooze — shows undo toast only when snoozing (not un-snoozing)
+  function handleToggleSnooze(itemId) {
+    const wasSnoozed = !!snoozed[itemId];
+    toggleSnooze(itemId);
+    if (!wasSnoozed) {
+      const found = findItem(itemId);
+      const label = found?.item.label ?? "Conta";
+      // undo calls toggleSnooze directly to avoid re-showing a toast
+      showToast(`"${label}" adiada`, () => toggleSnooze(itemId));
+    }
+  }
 
   function cycleSortMode() {
     const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
@@ -78,7 +132,7 @@ function App() {
             checked={checked}
             onToggle={toggle}
             snoozed={snoozed}
-            onToggleSnooze={toggleSnooze}
+            onToggleSnooze={(itemId) => handleToggleSnooze(itemId)}
             onReset={() => resetGroup(group.id)}
             values={values}
             onValueChange={setItemValue}
@@ -86,7 +140,7 @@ function App() {
             onDateChange={setItemDate}
             lastReset={lastResets[group.id] ?? null}
             onAddItem={(label) => addItem(group.id, label)}
-            onRemoveItem={(itemId) => removeItem(group.id, itemId)}
+            onRemoveItem={(itemId) => handleRemoveItem(group.id, itemId)}
             onRenameItem={(itemId, label) => renameItem(group.id, itemId, label)}
             sortMode={sortMode}
             viewState={collapsedGroups[group.id] ?? "open"}
@@ -135,6 +189,13 @@ function App() {
           </button>
         )}
       </main>
+
+      <Toast
+        message={toast.message}
+        onUndo={handleUndoToast}
+        visible={toast.visible}
+        toastKey={toastKey}
+      />
     </div>
   );
 }

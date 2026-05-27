@@ -59,9 +59,15 @@ export default function CheckboxItem({
   }
   function handleTouchEnd() {
     if (touch.current.dir !== "h") return;
-    if      (offset <= -(DELETE_WIDTH / 2)) snap(-DELETE_WIDTH);
-    else if (offset >=  (SNOOZE_WIDTH / 2)) snap(SNOOZE_WIDTH);
-    else                                    snap(0);
+    if (offset <= -(DELETE_WIDTH / 2)) {
+      snap(0);
+      onRemove();
+    } else if (offset >= (SNOOZE_WIDTH / 2)) {
+      snap(0);
+      onToggleSnooze();
+    } else {
+      snap(0);
+    }
   }
 
   // ── Edit ──

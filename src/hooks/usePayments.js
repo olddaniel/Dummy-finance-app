@@ -132,6 +132,17 @@ export function usePayments() {
     setDates((prev)   => { const n = { ...prev }; delete n[itemId]; return n; });
   }, []);
 
+  const restoreItem = useCallback((groupId, index, item) => {
+    setGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== groupId) return g;
+        const items = [...g.items];
+        items.splice(Math.min(index, items.length), 0, item);
+        return { ...g, items };
+      })
+    );
+  }, []);
+
   const renameItem = useCallback((groupId, itemId, newLabel) => {
     setGroups((prev) =>
       prev.map((g) =>
@@ -193,7 +204,7 @@ export function usePayments() {
     values, setItemValue,
     dates, setItemDate,
     lastResets, resetGroup,
-    addItem, removeItem, renameItem,
+    addItem, removeItem, restoreItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
     addGroup, removeGroup, renameGroup, changeGroupDateMode,
