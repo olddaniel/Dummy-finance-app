@@ -368,9 +368,11 @@
   color: var(--text-muted);
   font-size: 12px;
   font-family: inherit;
+  font-variant-numeric: tabular-nums; /* all digits same width */
   padding: 1px 0;
-  width: 28px;        /* fixed — fits "31" and "Set"; keeps R$ column steady */
-  text-align: center;
+  width: 28px;
+  text-align: right;
+  text-align-last: right; /* WebKit: aligns the displayed value, not just options */
   cursor: pointer;
 
   &.has-value { color: var(--text); }
