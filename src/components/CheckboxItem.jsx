@@ -2,21 +2,24 @@ import { useState, useEffect, useRef } from "react";
 
 const DELETE_WIDTH = 72;
 
+const MONTHS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
 function TrashIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      />
+      <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 export default function CheckboxItem({
-  label, checked, onChange, value, onValueChange, onRemove, onRename,
+  label, checked, onChange,
+  value, onValueChange,
+  dueDate, onDateChange, groupCycle,
+  onRemove, onRename,
 }) {
-  // ── Swipe state ──
+  // ── Swipe ──
   const [offset,  setOffset]  = useState(0);
   const [animate, setAnimate] = useState(false);
   const touch = useRef({ x: 0, y: 0, dir: null });
@@ -44,60 +47,42 @@ export default function CheckboxItem({
     snap(offset <= -(DELETE_WIDTH / 2) ? -DELETE_WIDTH : 0);
   }
 
-  // ── Edit state ──
+  // ── Edit ──
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(label);
   const labelInputRef = useRef(null);
 
-  // Keep draft in sync if parent updates the label externally
   useEffect(() => { if (!editing) setDraft(label); }, [label, editing]);
-
   useEffect(() => { if (editing) labelInputRef.current?.focus(); }, [editing]);
 
-  function startEdit() { setDraft(label); setEditing(true); }
-
   function save() {
-    const trimmed = draft.trim();
-    if (trimmed && trimmed !== label) onRename(trimmed);
+    const t = draft.trim();
+    if (t && t !== label) onRename(t);
     setEditing(false);
   }
-
   function cancel() { setDraft(label); setEditing(false); }
 
   return (
     <li className={`item-outer${checked ? " item-checked" : ""}`}>
-      {/* Delete zone */}
-      <button
-        className="item-delete-zone"
-        onClick={onRemove}
-        tabIndex={revealed ? 0 : -1}
-        aria-label={`Remover ${label}`}
-      >
+      <button className="item-delete-zone" onClick={onRemove}
+        tabIndex={revealed ? 0 : -1} aria-label={`Remover ${label}`}>
         <TrashIcon />
         <span>Remover</span>
       </button>
 
-      {/* Sliding content */}
       <div
         className="item"
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: animate ? "transform 0.2s ease" : "none",
-        }}
+        style={{ transform: `translateX(${offset}px)`, transition: animate ? "transform 0.2s ease" : "none" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        // Any tap while delete zone is revealed just closes it
         onClickCapture={revealed ? (e) => { e.stopPropagation(); snap(0); } : undefined}
-        // Tapping empty row space (outside label/value) toggles checkbox
         onClick={onChange}
       >
         <button
           className={`item-checkbox${checked ? " checked" : ""}`}
           onClick={(e) => { e.stopPropagation(); onChange(); }}
-          role="checkbox"
-          aria-checked={checked}
-          aria-label={label}
+          role="checkbox" aria-checked={checked} aria-label={label}
         >
           {checked && (
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
@@ -107,38 +92,51 @@ export default function CheckboxItem({
           )}
         </button>
 
-        {/* Label — tap enters edit mode; stops propagation so row click doesn't toggle */}
         {editing ? (
           <input
             ref={labelInputRef}
             className="item-label-input"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter")  { e.preventDefault(); save(); }
-              if (e.key === "Escape") { e.preventDefault(); cancel(); }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); save(); } if (e.key === "Escape") { e.preventDefault(); cancel(); } }}
             onBlur={save}
             onClick={(e) => e.stopPropagation()}
             maxLength={60}
             aria-label="Editar nome da conta"
           />
         ) : (
-          <span
-            className="item-label"
-            onClick={(e) => { e.stopPropagation(); startEdit(); }}
-          >
+          <span className="item-label" onClick={(e) => { e.stopPropagation(); setEditing(true); setDraft(label); }}>
             {label}
           </span>
         )}
 
+        {/* Due date picker */}
+        <span className="item-date-wrapper" onClick={(e) => e.stopPropagation()}>
+          <select
+            className={`item-date-select${dueDate ? " has-value" : ""}`}
+            value={dueDate ?? ""}
+            onChange={(e) => onDateChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
+            aria-label={groupCycle === "monthly" ? "Dia do vencimento" : "Mês do vencimento"}
+          >
+            <option value="">—</option>
+            {groupCycle === "monthly"
+              ? Array.from({ length: 31 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))
+              : MONTHS.map((m, i) => (
+                  <option key={i + 1} value={i + 1}>{m}</option>
+                ))
+            }
+          </select>
+        </span>
+
+        {/* Value */}
         <span className="item-value-wrapper" onClick={(e) => e.stopPropagation()}>
           <span className="item-value-prefix">R$</span>
           <input
             type="number"
             className="item-value-input"
-            min="0"
-            step="0.01"
+            min="0" step="0.01"
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
             placeholder="—"

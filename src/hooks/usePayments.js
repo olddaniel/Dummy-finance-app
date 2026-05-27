@@ -20,22 +20,17 @@ function saveState(state) {
 }
 
 export function usePayments() {
-  // Groups own the item list — starts from defaults, fully editable
-  const [groups, setGroups] = useState(() => {
-    const saved = loadState();
-    return saved?.groups ?? DEFAULT_PAYMENTS.map((g) => ({ ...g, items: [...g.items] }));
-  });
-
-  // checked / values keyed by item id — undefined treated as false / 0
-  const [checked, setChecked] = useState(() => loadState()?.checked ?? {});
-  const [values,  setValues]  = useState(() => loadState()?.values  ?? {});
-
-  // Per-group last-reset timestamps
-  const [lastResets, setLastResets] = useState(() => loadState()?.lastResets ?? {});
+  const [groups,          setGroups]          = useState(() => loadState()?.groups          ?? DEFAULT_PAYMENTS.map((g) => ({ ...g, items: [...g.items] })));
+  const [checked,         setChecked]         = useState(() => loadState()?.checked         ?? {});
+  const [values,          setValues]          = useState(() => loadState()?.values          ?? {});
+  const [lastResets,      setLastResets]      = useState(() => loadState()?.lastResets      ?? {});
+  const [dates,           setDates]           = useState(() => loadState()?.dates           ?? {});
+  const [sortModes,       setSortModes]       = useState(() => loadState()?.sortModes       ?? {});
+  const [collapsedGroups, setCollapsedGroups] = useState(() => loadState()?.collapsedGroups ?? {});
 
   useEffect(() => {
-    saveState({ groups, checked, values, lastResets });
-  }, [groups, checked, values, lastResets]);
+    saveState({ groups, checked, values, lastResets, dates, sortModes, collapsedGroups });
+  }, [groups, checked, values, lastResets, dates, sortModes, collapsedGroups]);
 
   const toggle = useCallback((id) => {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -44,6 +39,11 @@ export function usePayments() {
   const setItemValue = useCallback((id, rawValue) => {
     const num = parseFloat(rawValue);
     setValues((prev) => ({ ...prev, [id]: isNaN(num) ? 0 : num }));
+  }, []);
+
+  const setItemDate = useCallback((id, rawValue) => {
+    const num = parseInt(rawValue, 10);
+    setDates((prev) => ({ ...prev, [id]: isNaN(num) ? null : num }));
   }, []);
 
   const resetGroup = useCallback((groupId) => {
@@ -77,6 +77,7 @@ export function usePayments() {
     );
     setChecked((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     setValues((prev)  => { const n = { ...prev }; delete n[itemId]; return n; });
+    setDates((prev)   => { const n = { ...prev }; delete n[itemId]; return n; });
   }, []);
 
   const renameItem = useCallback((groupId, itemId, newLabel) => {
@@ -89,5 +90,21 @@ export function usePayments() {
     );
   }, []);
 
-  return { groups, checked, toggle, values, setItemValue, resetGroup, lastResets, addItem, removeItem, renameItem };
+  const setSortMode = useCallback((groupId, mode) => {
+    setSortModes((prev) => ({ ...prev, [groupId]: mode }));
+  }, []);
+
+  const toggleGroupCollapsed = useCallback((groupId) => {
+    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  }, []);
+
+  return {
+    groups, checked, toggle,
+    values, setItemValue,
+    dates, setItemDate,
+    lastResets, resetGroup,
+    addItem, removeItem, renameItem,
+    sortModes, setSortMode,
+    collapsedGroups, toggleGroupCollapsed,
+  };
 }

@@ -149,6 +149,32 @@
   }
 }
 
+/* ── Sort toggle button ── */
+.sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 7px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  min-width: 28px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover { background: var(--surface-hover); color: var(--text); }
+
+  &.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(108, 123, 255, 0.08);
+  }
+}
+
 /* ── Progress badge (collapse toggle) ── */
 .progress-badge {
   display: inline-flex;
@@ -304,11 +330,36 @@
   &:focus { outline: none; }
 }
 
+/* ── Due date picker ── */
+.item-date-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.item-date-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 1px 0;
+  min-width: 28px;
+  text-align: center;
+  cursor: pointer;
+
+  &.has-value { color: var(--text); }
+  &:focus { outline: none; border-bottom-color: var(--accent); color: var(--text); }
+}
+
 /* ── Value input ── */
 .item-value-wrapper {
   display: flex;
   align-items: center;
-  gap: 0;          /* no gap — prefix and number are visually flush */
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -319,14 +370,14 @@
 }
 
 .item-value-input {
-  width: 72px;
+  width: 88px;
   background: transparent;
   border: none;
   border-bottom: 1px solid transparent;
   color: var(--text);
   font-size: 13px;
   font-family: inherit;
-  text-align: left;   /* left-align so number sits flush after R$ */
+  text-align: right;  /* number hugs the right edge of the row */
   padding: 1px 0;
   transition: border-color 0.15s;
 

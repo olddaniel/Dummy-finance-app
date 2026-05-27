@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import CheckboxItem from "./CheckboxItem";
 import { formatBRL } from "../utils";
 
@@ -28,12 +28,26 @@ function ChevronIcon({ collapsed }) {
   );
 }
 
+function SortIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path d="M1 3h10M1 6h6.5M1 9h3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+const SORT_CYCLE = ["manual", "value", "date"];
+
 export default function PaymentGroup({
-  group, checked, onToggle, onReset, values, onValueChange,
-  lastReset, onAddItem, onRemoveItem, onRenameItem,
+  group, checked, onToggle, onReset,
+  values, onValueChange,
+  dates, onDateChange,
+  lastReset,
+  onAddItem, onRemoveItem, onRenameItem,
+  sortMode, onSortChange,
+  collapsed, onToggleCollapsed,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
-  const [collapsed, setCollapsed]       = useState(false);
   const [adding, setAdding]             = useState(false);
   const [newLabel, setNewLabel]         = useState("");
   const inputRef = useRef(null);
@@ -41,6 +55,17 @@ export default function PaymentGroup({
   useEffect(() => {
     if (adding) inputRef.current?.focus();
   }, [adding]);
+
+  // Sorted items
+  const sortedItems = useMemo(() => {
+    if (sortMode === "value") {
+      return [...group.items].sort((a, b) => (values[b.id] || 0) - (values[a.id] || 0));
+    }
+    if (sortMode === "date") {
+      return [...group.items].sort((a, b) => (dates[a.id] ?? 999) - (dates[b.id] ?? 999));
+    }
+    return group.items;
+  }, [group.items, sortMode, values, dates]);
 
   const total   = group.items.length;
   const done    = group.items.filter((item) => checked[item.id]).length;
@@ -51,7 +76,17 @@ export default function PaymentGroup({
   const paidSum  = group.items.reduce((s, i) => s + (checked[i.id] ? values[i.id] || 0 : 0), 0);
 
   const resetDate = formatDate(lastReset);
-  const hasMeta   = totalSum > 0;
+
+  function cycleSortMode() {
+    const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
+    onSortChange(next);
+  }
+
+  const sortLabel = sortMode === "value"
+    ? "R$↓"
+    : sortMode === "date"
+      ? (group.cycle === "monthly" ? "dia↑" : "mês↑")
+      : null; // manual → show icon
 
   function handleAdd() {
     if (!newLabel.trim()) return;
@@ -71,35 +106,47 @@ export default function PaymentGroup({
       <div className="group-header">
         <div className="group-title-block">
           <h2 className="group-title">{group.title}</h2>
-          {hasMeta && (
+          {totalSum > 0 && (
             <div className="group-meta">
-              {totalSum > 0 && (
-                <span className="group-sum">
-                  {paidSum > 0 && (
-                    <><span className="sum-paid">{formatBRL(paidSum)}</span><span className="sum-sep"> / </span></>
-                  )}
-                  <span>{formatBRL(totalSum)}</span>
-                </span>
-              )}
+              <span className="group-sum">
+                {paidSum > 0 && (
+                  <><span className="sum-paid">{formatBRL(paidSum)}</span><span className="sum-sep"> / </span></>
+                )}
+                <span>{formatBRL(totalSum)}</span>
+              </span>
             </div>
           )}
         </div>
 
         <div className="group-header-right">
           {!collapsed && (
-            <button
-              className={`reset-btn${confirmReset ? " confirm" : ""}`}
-              onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
-              onBlur={() => setConfirmReset(false)}
-              title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
-            >
-              {confirmReset ? "Confirmar?" : resetDate ? resetDate : <ResetIcon />}
-            </button>
+            <>
+              <button
+                className={`reset-btn${confirmReset ? " confirm" : ""}`}
+                onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
+                onBlur={() => setConfirmReset(false)}
+                title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
+              >
+                {confirmReset ? "Confirmar?" : resetDate ?? <ResetIcon />}
+              </button>
+
+              <button
+                className={`sort-btn${sortMode !== "manual" ? " active" : ""}`}
+                onClick={cycleSortMode}
+                title={
+                  sortMode === "manual" ? "Ordenar por valor ou data" :
+                  sortMode === "value"  ? "Ordenando por valor (clique para mudar)" :
+                                         "Ordenando por data (clique para mudar)"
+                }
+              >
+                {sortLabel ?? <SortIcon />}
+              </button>
+            </>
           )}
 
           <button
             className={`progress-badge${collapsed ? " collapsed" : ""}`}
-            onClick={() => setCollapsed((c) => !c)}
+            onClick={onToggleCollapsed}
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expandir grupo" : "Recolher grupo"}
           >
@@ -119,7 +166,7 @@ export default function PaymentGroup({
       {/* Collapsible items + add row */}
       <div className={`item-list-wrapper${collapsed ? " collapsed" : ""}`}>
         <ul className="item-list">
-          {group.items.map((item) => (
+          {sortedItems.map((item) => (
             <CheckboxItem
               key={item.id}
               label={item.label}
@@ -127,12 +174,14 @@ export default function PaymentGroup({
               onChange={() => onToggle(item.id)}
               value={values[item.id] || ""}
               onValueChange={(val) => onValueChange(item.id, val)}
+              dueDate={dates[item.id] ?? null}
+              onDateChange={(val) => onDateChange(item.id, val)}
+              groupCycle={group.cycle}
               onRemove={() => onRemoveItem(item.id)}
               onRename={(newLabel) => onRenameItem(item.id, newLabel)}
             />
           ))}
 
-          {/* Add bill row */}
           {adding ? (
             <li className="item-add-form">
               <input
@@ -147,23 +196,12 @@ export default function PaymentGroup({
                 placeholder="Nome da conta..."
                 maxLength={60}
               />
-              <button
-                className="item-add-confirm"
-                onClick={handleAdd}
-                disabled={!newLabel.trim()}
-                aria-label="Confirmar"
-              >✓</button>
-              <button
-                className="item-add-cancel"
-                onClick={cancelAdd}
-                aria-label="Cancelar"
-              >✕</button>
+              <button className="item-add-confirm" onClick={handleAdd} disabled={!newLabel.trim()} aria-label="Confirmar">✓</button>
+              <button className="item-add-cancel" onClick={cancelAdd} aria-label="Cancelar">✕</button>
             </li>
           ) : (
             <li className="item-add-btn-row">
-              <button className="item-add-btn" onClick={() => setAdding(true)}>
-                + Adicionar conta
-              </button>
+              <button className="item-add-btn" onClick={() => setAdding(true)}>+ Adicionar conta</button>
             </li>
           )}
         </ul>

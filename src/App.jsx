@@ -3,7 +3,15 @@ import PaymentGroup from "./components/PaymentGroup";
 import "./App.css";
 
 function App() {
-  const { groups, checked, toggle, values, setItemValue, resetGroup, lastResets, addItem, removeItem, renameItem } = usePayments();
+  const {
+    groups, checked, toggle,
+    values, setItemValue,
+    dates, setItemDate,
+    lastResets, resetGroup,
+    addItem, removeItem, renameItem,
+    sortModes, setSortMode,
+    collapsedGroups, toggleGroupCollapsed,
+  } = usePayments();
 
   return (
     <div className="app">
@@ -24,10 +32,16 @@ function App() {
             onReset={() => resetGroup(group.id)}
             values={values}
             onValueChange={setItemValue}
+            dates={dates}
+            onDateChange={setItemDate}
             lastReset={lastResets[group.id] ?? null}
             onAddItem={(label) => addItem(group.id, label)}
             onRemoveItem={(itemId) => removeItem(group.id, itemId)}
             onRenameItem={(itemId, label) => renameItem(group.id, itemId, label)}
+            sortMode={sortModes[group.id] ?? "manual"}
+            onSortChange={(mode) => setSortMode(group.id, mode)}
+            collapsed={!!collapsedGroups[group.id]}
+            onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
           />
         ))}
       </main>
