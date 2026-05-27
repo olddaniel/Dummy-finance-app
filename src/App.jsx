@@ -72,6 +72,17 @@ function App() {
     }
   }
 
+  // Wrapped check — shows undo toast only when checking (not unchecking)
+  function handleToggle(itemId) {
+    const wasChecked = !!checked[itemId];
+    toggle(itemId);
+    if (!wasChecked) {
+      const found = findItem(itemId);
+      const label = found?.item.label ?? "Conta";
+      showToast(`"${label}" paga`, () => toggle(itemId));
+    }
+  }
+
   // Wrapped snooze — shows undo toast only when snoozing (not un-snoozing)
   function handleToggleSnooze(itemId) {
     const wasSnoozed = !!snoozed[itemId];
@@ -130,7 +141,7 @@ function App() {
             key={group.id}
             group={group}
             checked={checked}
-            onToggle={toggle}
+            onToggle={(id) => handleToggle(id)}
             snoozed={snoozed}
             onToggleSnooze={(itemId) => handleToggleSnooze(itemId)}
             onReset={() => resetGroup(group.id)}

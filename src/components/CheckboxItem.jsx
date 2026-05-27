@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 
-const DELETE_WIDTH = 72;
-const SNOOZE_WIDTH = 72;
+// Distance (px) at which the action commits on release
+const THRESHOLD = 80;
+// Rubber-band resistance past the threshold (fraction of extra movement applied)
+const BAND = 0.25;
 
 const MONTHS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
@@ -28,7 +30,7 @@ export default function CheckboxItem({
   snoozed, onToggleSnooze,
   value, onValueChange,
   dueDate, onDateChange,
-  dateMode = "days",   // "none" | "days" | "months"
+  dateMode = "days",
   onRemove, onRename,
 }) {
   // ── Swipe ──
@@ -36,9 +38,9 @@ export default function CheckboxItem({
   const [animate, setAnimate] = useState(false);
   const touch = useRef({ x: 0, y: 0, dir: null });
 
-  const revealedDelete = offset <= -(DELETE_WIDTH - 1);
-  const revealedSnooze = offset >=  (SNOOZE_WIDTH - 1);
-  const anyRevealed    = revealedDelete || revealedSnooze;
+  const overThreshold = Math.abs(offset) >= THRESHOLD;
+  const swipingLeft   = offset < -2;
+  const swipingRight  = offset >  2;
 
   function snap(x) { setAnimate(true); setOffset(x); }
 
@@ -54,20 +56,18 @@ export default function CheckboxItem({
       touch.current.dir = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
     }
     if (touch.current.dir !== "h") return;
-    const base = revealedDelete ? -DELETE_WIDTH : revealedSnooze ? SNOOZE_WIDTH : 0;
-    setOffset(Math.max(-DELETE_WIDTH, Math.min(SNOOZE_WIDTH, base + dx)));
+    // Free movement up to THRESHOLD, then rubber-band resistance
+    let next;
+    if      (dx < -THRESHOLD) next = -THRESHOLD + (dx + THRESHOLD) * BAND;
+    else if (dx >  THRESHOLD) next =  THRESHOLD + (dx - THRESHOLD) * BAND;
+    else                      next = dx;
+    setOffset(next);
   }
   function handleTouchEnd() {
     if (touch.current.dir !== "h") return;
-    if (offset <= -(DELETE_WIDTH / 2)) {
-      snap(0);
-      onRemove();
-    } else if (offset >= (SNOOZE_WIDTH / 2)) {
-      snap(0);
-      onToggleSnooze();
-    } else {
-      snap(0);
-    }
+    if      (offset <= -THRESHOLD) { snap(0); onRemove(); }
+    else if (offset >=  THRESHOLD) { snap(0); onToggleSnooze(); }
+    else                           { snap(0); }
   }
 
   // ── Edit ──
@@ -85,33 +85,36 @@ export default function CheckboxItem({
   }
   function cancel() { setDraft(label); setEditing(false); }
 
+  const dirClass = swipingRight ? " swiping-right" : swipingLeft ? " swiping-left" : "";
+
   return (
-    <li className={`item-outer${checked ? " item-checked" : ""}${snoozed ? " item-snoozed" : ""}`}>
-      {/* Snooze zone — revealed on swipe right */}
+    <li className={`item-outer${checked ? " item-checked" : ""}${snoozed ? " item-snoozed" : ""}${dirClass}`}>
+      {/* Snooze zone — fills container, revealed when row slides right */}
       <button
-        className={`item-snooze-zone${snoozed ? " active" : ""}`}
+        className={`item-snooze-zone${snoozed ? " active" : ""}${overThreshold && swipingRight ? " over-threshold" : ""}`}
         onClick={() => { onToggleSnooze(); snap(0); }}
-        tabIndex={revealedSnooze ? 0 : -1}
         aria-label={snoozed ? `Desadiar ${label}` : `Adiar ${label}`}
       >
         <SnoozeIcon />
         <span>{snoozed ? "Desadiar" : "Adiar"}</span>
       </button>
 
-      {/* Delete zone — revealed on swipe left */}
-      <button className="item-delete-zone" onClick={onRemove}
-        tabIndex={revealedDelete ? 0 : -1} aria-label={`Remover ${label}`}>
+      {/* Delete zone — fills container, revealed when row slides left */}
+      <button
+        className={`item-delete-zone${overThreshold && swipingLeft ? " over-threshold" : ""}`}
+        onClick={() => { onRemove(); snap(0); }}
+        aria-label={`Remover ${label}`}
+      >
         <TrashIcon />
         <span>Remover</span>
       </button>
 
       <div
         className="item"
-        style={{ transform: `translateX(${offset}px)`, transition: animate ? "transform 0.2s ease" : "none" }}
+        style={{ transform: `translateX(${offset}px)`, transition: animate ? "transform 0.22s ease" : "none" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClickCapture={anyRevealed ? (e) => { e.stopPropagation(); snap(0); } : undefined}
         onClick={onChange}
       >
         <button
@@ -154,7 +157,6 @@ export default function CheckboxItem({
           </>
         )}
 
-        {/* Value + Date — grouped on the right, value first so date anchors the far edge */}
         <span className="item-right" onClick={(e) => e.stopPropagation()}>
           <span className="item-value-wrapper">
             <span className="item-value-prefix">R$</span>

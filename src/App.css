@@ -391,49 +391,60 @@
 .item-outer.item-snoozed .item-value-prefix,
 .item-outer.item-snoozed .item-value-input { color: var(--text-muted); }
 
-/* ── Delete zone — lives behind the sliding row ── */
+/* ── Delete zone — full width, icon anchored to right edge ── */
 .item-delete-zone {
   position: absolute;
-  inset: 0 0 0 auto;
-  width: 72px;
+  inset: 0;
   background: #c0392b;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 3px;
+  padding-right: 22px;
   color: #fff;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.3px;
   border: none;
   cursor: pointer;
+  z-index: 1;
+  transition: background 0.15s;
+
+  &.over-threshold { background: #e74c3c; }
 }
 
-/* ── Snooze zone — revealed on swipe right ── */
+/* ── Snooze zone — full width, icon anchored to left edge ── */
 .item-snooze-zone {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 72px;
+  inset: 0;
   background: var(--yellow);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 3px;
+  padding-left: 22px;
   color: #1a1200;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.3px;
   border: none;
   cursor: pointer;
+  z-index: 0;
+  transition: background 0.15s;
 
-  &.active { background: #b87a00; color: #fff; }
+  &.active      { background: #b87a00; color: #fff; }
+  &.over-threshold { background: #f5ba40; }
 }
+
+/* Bring snooze zone above delete zone only while swiping right */
+.item-outer.swiping-right .item-snooze-zone { z-index: 2; }
 
 /* ── Sliding item row ── */
 .item {
   position: relative;
+  z-index: 3;  /* always above both action zones */
   display: flex;
   align-items: center;
   gap: 10px;
