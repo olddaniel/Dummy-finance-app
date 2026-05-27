@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { usePayments } from "./hooks/usePayments";
 import PaymentGroup from "./components/PaymentGroup";
 import "./App.css";
@@ -21,7 +22,12 @@ function App() {
     addItem, removeItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
+    addGroup,
   } = usePayments();
+
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupLabel, setNewGroupLabel] = useState("");
+  const [newGroupDateMode, setNewGroupDateMode] = useState("none");
 
   function cycleSortMode() {
     const next = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
@@ -29,6 +35,20 @@ function App() {
   }
 
   const sortLabel = sortMode === "value" ? "R$↓" : sortMode === "date" ? "data↑" : null;
+
+  function handleAddGroup() {
+    if (!newGroupLabel.trim()) return;
+    addGroup(newGroupLabel, newGroupDateMode);
+    setNewGroupLabel("");
+    setNewGroupDateMode("none");
+    setAddingGroup(false);
+  }
+
+  function cancelAddGroup() {
+    setNewGroupLabel("");
+    setNewGroupDateMode("none");
+    setAddingGroup(false);
+  }
 
   return (
     <div className="app">
@@ -70,6 +90,44 @@ function App() {
             onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
           />
         ))}
+
+        {addingGroup ? (
+          <div className="group-add-form">
+            <input
+              className="group-add-input"
+              placeholder="Nome do grupo..."
+              value={newGroupLabel}
+              onChange={(e) => setNewGroupLabel(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleAddGroup(); if (e.key === "Escape") cancelAddGroup(); }}
+              maxLength={40}
+              autoFocus
+            />
+            <div className="group-add-modes">
+              {[
+                { value: "none",   label: "Sem data" },
+                { value: "days",   label: "Dias" },
+                { value: "months", label: "Meses" },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  className={`group-add-mode-btn${newGroupDateMode === value ? " active" : ""}`}
+                  onClick={() => setNewGroupDateMode(value)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="group-add-actions">
+              <button className="item-add-confirm" onClick={handleAddGroup} disabled={!newGroupLabel.trim()} aria-label="Confirmar">✓</button>
+              <button className="item-add-cancel" onClick={cancelAddGroup} aria-label="Cancelar">✕</button>
+            </div>
+          </div>
+        ) : (
+          <button className="group-add-btn" onClick={() => setAddingGroup(true)}>
+            + Adicionar grupo
+          </button>
+        )}
       </main>
     </div>
   );

@@ -138,8 +138,7 @@ export default function PaymentGroup({
               onValueChange={(val) => onValueChange(item.id, val)}
               dueDate={dates[item.id] ?? null}
               onDateChange={(val) => onDateChange(item.id, val)}
-              groupCycle={group.cycle}
-              showDate={!group.noDates}
+              dateMode={group.dateMode}
               onRemove={() => onRemoveItem(item.id)}
               onRename={(newLabel) => onRenameItem(item.id, newLabel)}
             />

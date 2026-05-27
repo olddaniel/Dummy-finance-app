@@ -3,7 +3,7 @@ export const DEFAULT_PAYMENTS = [
   {
     id: "monthly",
     title: "Mensais",
-    cycle: "monthly",
+    dateMode: "days",
     items: [
       { id: "comgas", label: "Comgas" },
       { id: "cpfl", label: "CPFL" },
@@ -19,21 +19,19 @@ export const DEFAULT_PAYMENTS = [
   {
     id: "card",
     title: "Cartão",
-    cycle: "monthly",
-    noDates: true,
+    dateMode: "none",
     items: [],
   },
   {
     id: "savings",
     title: "Reservas",
-    cycle: "monthly",
-    noDates: true,
+    dateMode: "none",
     items: [],
   },
   {
     id: "yearly",
     title: "Anuais",
-    cycle: "yearly",
+    dateMode: "months",
     items: [
       { id: "seguro", label: "Seguro" },
       { id: "licenciamento", label: "Licenciamento e IPVA" },

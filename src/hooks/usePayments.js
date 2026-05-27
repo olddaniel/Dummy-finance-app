@@ -19,16 +19,26 @@ function saveState(state) {
   } catch { /* quota exceeded */ }
 }
 
+function normalizeDateMode(g) {
+  if (g.dateMode) return g.dateMode;        // already migrated
+  if (g.noDates) return "none";
+  if (g.cycle === "yearly") return "months";
+  return "days";
+}
+
 function mergeGroups(saved, defaults) {
   if (!saved) return defaults.map((g) => ({ ...g, items: [...g.items] }));
-  // Order follows defaults; existing groups keep their saved items;
-  // new default groups (e.g. Cartão, Reservas) are inserted automatically.
-  return defaults.map((g) => {
-    const savedGroup = saved.find((sg) => sg.id === g.id);
-    if (!savedGroup) return { ...g, items: [...g.items] };
-    // Structural metadata always from defaults; only items come from saved state.
-    return { ...g, items: savedGroup.items };
+  const defaultIds = new Set(defaults.map((g) => g.id));
+  const mergedDefaults = defaults.map((g) => {
+    const s = saved.find((sg) => sg.id === g.id);
+    if (!s) return { ...g, items: [...g.items] };
+    return { ...g, items: s.items };
   });
+  // preserve user-added groups (not in defaults)
+  const extraGroups = saved
+    .filter((sg) => !defaultIds.has(sg.id))
+    .map((sg) => ({ ...sg, dateMode: normalizeDateMode(sg) }));
+  return [...mergedDefaults, ...extraGroups];
 }
 
 export function usePayments() {
@@ -120,6 +130,11 @@ export function usePayments() {
     });
   }, []);
 
+  const addGroup = useCallback((title, dateMode) => {
+    const id = `group_${Date.now()}`;
+    setGroups((prev) => [...prev, { id, title: title.trim(), dateMode, items: [] }]);
+  }, []);
+
   return {
     groups, checked, toggle,
     values, setItemValue,
@@ -128,5 +143,6 @@ export function usePayments() {
     addItem, removeItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
+    addGroup,
   };
 }

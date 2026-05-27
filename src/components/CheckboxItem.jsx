@@ -16,8 +16,8 @@ function TrashIcon() {
 export default function CheckboxItem({
   label, checked, onChange,
   value, onValueChange,
-  dueDate, onDateChange, groupCycle,
-  showDate = true,
+  dueDate, onDateChange,
+  dateMode = "days",   // "none" | "days" | "months"
   onRemove, onRename,
 }) {
   // ── Swipe ──
@@ -113,15 +113,15 @@ export default function CheckboxItem({
 
         {/* Date + Value — grouped on the right */}
         <span className="item-right" onClick={(e) => e.stopPropagation()}>
-          {showDate && (
+          {dateMode !== "none" && (
             <select
               className={`item-date-select${dueDate ? " has-value" : ""}`}
               value={dueDate ?? ""}
               onChange={(e) => onDateChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
-              aria-label={groupCycle === "monthly" ? "Dia do vencimento" : "Mês do vencimento"}
+              aria-label={dateMode === "days" ? "Dia do vencimento" : "Mês do vencimento"}
             >
               <option value="">—</option>
-              {groupCycle === "monthly"
+              {dateMode === "days"
                 ? Array.from({ length: 31 }, (_, i) => (
                     <option key={i + 1} value={i + 1}>{i + 1}</option>
                   ))
