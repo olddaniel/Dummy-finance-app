@@ -9,14 +9,6 @@ function formatDate(iso) {
   });
 }
 
-function ResetIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-      <path d="M1.85 7.5A5.65 5.65 0 1 0 7.5 1.85M1.85 7.5V4M1.85 7.5H5.5"
-        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 // Three-state chevron: open=down, semi=diagonal, closed=right
 function ChevronIcon({ viewState }) {
@@ -173,14 +165,14 @@ export default function PaymentGroup({
           ) : (
             <li className="item-add-btn-row">
               <button className="item-add-btn" onClick={() => setAdding(true)}>+ Adicionar conta</button>
-              {!isSemi && (
+              {!isSemi && (done > 0 || resetDate) && (
                 <button
                   className={`reset-btn${confirmReset ? " confirm" : ""}`}
                   onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
                   onBlur={() => setConfirmReset(false)}
                   title={confirmReset ? "Clique novamente para confirmar" : "Resetar ciclo"}
                 >
-                  {confirmReset ? "Confirmar?" : resetDate ?? <ResetIcon />}
+                  {confirmReset ? "Confirmar?" : resetDate ?? "Resetar"}
                 </button>
               )}
             </li>
