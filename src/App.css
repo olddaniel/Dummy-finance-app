@@ -379,6 +379,15 @@
   text-decoration-color: var(--text-done);
 }
 
+/* Strikethrough + amber tint when snoozed */
+.item-outer.item-snoozed .item-label {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--yellow);
+}
+.item-outer.item-snoozed .item-value-prefix,
+.item-outer.item-snoozed .item-value-input { color: var(--text-muted); }
+
 /* ── Delete zone — lives behind the sliding row ── */
 .item-delete-zone {
   position: absolute;
@@ -396,6 +405,27 @@
   letter-spacing: 0.3px;
   border: none;
   cursor: pointer;
+}
+
+/* ── Snooze zone — revealed on swipe right ── */
+.item-snooze-zone {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 72px;
+  background: var(--yellow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #1a1200;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+
+  &.active { background: #b87a00; color: #fff; }
 }
 
 /* ── Sliding item row ── */
@@ -427,6 +457,7 @@
 
   &:hover { border-color: var(--accent); }
   &.checked { background: var(--accent); border-color: var(--accent); }
+  &.snoozed { border-color: var(--yellow); color: var(--yellow); }
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 

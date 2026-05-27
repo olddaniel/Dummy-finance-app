@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const DELETE_WIDTH = 72;
+const SNOOZE_WIDTH = 72;
 
 const MONTHS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
@@ -13,8 +14,18 @@ function TrashIcon() {
   );
 }
 
+function SnoozeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function CheckboxItem({
   label, checked, onChange,
+  snoozed, onToggleSnooze,
   value, onValueChange,
   dueDate, onDateChange,
   dateMode = "days",   // "none" | "days" | "months"
@@ -24,7 +35,10 @@ export default function CheckboxItem({
   const [offset,  setOffset]  = useState(0);
   const [animate, setAnimate] = useState(false);
   const touch = useRef({ x: 0, y: 0, dir: null });
-  const revealed = offset <= -(DELETE_WIDTH - 1);
+
+  const revealedDelete = offset <= -(DELETE_WIDTH - 1);
+  const revealedSnooze = offset >=  (SNOOZE_WIDTH - 1);
+  const anyRevealed    = revealedDelete || revealedSnooze;
 
   function snap(x) { setAnimate(true); setOffset(x); }
 
@@ -40,12 +54,14 @@ export default function CheckboxItem({
       touch.current.dir = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
     }
     if (touch.current.dir !== "h") return;
-    const base = revealed ? -DELETE_WIDTH : 0;
-    setOffset(Math.max(-DELETE_WIDTH, Math.min(0, base + dx)));
+    const base = revealedDelete ? -DELETE_WIDTH : revealedSnooze ? SNOOZE_WIDTH : 0;
+    setOffset(Math.max(-DELETE_WIDTH, Math.min(SNOOZE_WIDTH, base + dx)));
   }
   function handleTouchEnd() {
     if (touch.current.dir !== "h") return;
-    snap(offset <= -(DELETE_WIDTH / 2) ? -DELETE_WIDTH : 0);
+    if      (offset <= -(DELETE_WIDTH / 2)) snap(-DELETE_WIDTH);
+    else if (offset >=  (SNOOZE_WIDTH / 2)) snap(SNOOZE_WIDTH);
+    else                                    snap(0);
   }
 
   // ── Edit ──
@@ -64,9 +80,21 @@ export default function CheckboxItem({
   function cancel() { setDraft(label); setEditing(false); }
 
   return (
-    <li className={`item-outer${checked ? " item-checked" : ""}`}>
+    <li className={`item-outer${checked ? " item-checked" : ""}${snoozed ? " item-snoozed" : ""}`}>
+      {/* Snooze zone — revealed on swipe right */}
+      <button
+        className={`item-snooze-zone${snoozed ? " active" : ""}`}
+        onClick={() => { onToggleSnooze(); snap(0); }}
+        tabIndex={revealedSnooze ? 0 : -1}
+        aria-label={snoozed ? `Desadiar ${label}` : `Adiar ${label}`}
+      >
+        <SnoozeIcon />
+        <span>{snoozed ? "Desadiar" : "Adiar"}</span>
+      </button>
+
+      {/* Delete zone — revealed on swipe left */}
       <button className="item-delete-zone" onClick={onRemove}
-        tabIndex={revealed ? 0 : -1} aria-label={`Remover ${label}`}>
+        tabIndex={revealedDelete ? 0 : -1} aria-label={`Remover ${label}`}>
         <TrashIcon />
         <span>Remover</span>
       </button>
@@ -77,11 +105,11 @@ export default function CheckboxItem({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClickCapture={revealed ? (e) => { e.stopPropagation(); snap(0); } : undefined}
+        onClickCapture={anyRevealed ? (e) => { e.stopPropagation(); snap(0); } : undefined}
         onClick={onChange}
       >
         <button
-          className={`item-checkbox${checked ? " checked" : ""}`}
+          className={`item-checkbox${checked ? " checked" : ""}${snoozed ? " snoozed" : ""}`}
           onClick={(e) => { e.stopPropagation(); onChange(); }}
           role="checkbox" aria-checked={checked} aria-label={label}
         >
@@ -89,6 +117,12 @@ export default function CheckboxItem({
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
               <path d="M1.5 5.5l3 3 5-5" stroke="#fff" strokeWidth="1.8"
                 strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+          {snoozed && !checked && (
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </button>

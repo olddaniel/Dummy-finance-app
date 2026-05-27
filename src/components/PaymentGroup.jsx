@@ -23,6 +23,7 @@ function ChevronIcon({ viewState }) {
 
 export default function PaymentGroup({
   group, checked, onToggle, onReset,
+  snoozed, onToggleSnooze,
   values, onValueChange,
   dates, onDateChange,
   lastReset,
@@ -77,18 +78,21 @@ export default function PaymentGroup({
     return group.items;
   }, [group.items, sortMode, values, dates]);
 
-  // In semi mode only show unchecked items
+  // In semi mode only show unchecked + un-snoozed items
   const displayItems = isSemi
-    ? sortedItems.filter((item) => !checked[item.id])
+    ? sortedItems.filter((item) => !checked[item.id] && !snoozed[item.id])
     : sortedItems;
 
   const total   = group.items.length;
-  const done    = group.items.filter((item) => checked[item.id]).length;
+  // snoozed counts as "handled" for the progress badge
+  const done    = group.items.filter((item) => checked[item.id] || snoozed[item.id]).length;
   const allDone = done === total && total > 0;
   const pct     = total === 0 ? 0 : (done / total) * 100;
 
-  const totalSum = group.items.reduce((s, i) => s + (values[i.id] || 0), 0);
-  const paidSum  = group.items.reduce((s, i) => s + (checked[i.id] ? values[i.id] || 0 : 0), 0);
+  // snoozed items are excluded from the sum (they reduce the group total)
+  const activeItems = group.items.filter((i) => !snoozed[i.id]);
+  const totalSum = activeItems.reduce((s, i) => s + (values[i.id] || 0), 0);
+  const paidSum  = activeItems.reduce((s, i) => s + (checked[i.id] ? values[i.id] || 0 : 0), 0);
 
   const resetDate = formatDate(lastReset);
 
@@ -227,6 +231,8 @@ export default function PaymentGroup({
               label={item.label}
               checked={!!checked[item.id]}
               onChange={() => onToggle(item.id)}
+              snoozed={!!snoozed[item.id]}
+              onToggleSnooze={() => onToggleSnooze(item.id)}
               value={values[item.id] || ""}
               onValueChange={(val) => onValueChange(item.id, val)}
               dueDate={dates[item.id] ?? null}

@@ -16,6 +16,7 @@ function SortIcon() {
 function App() {
   const {
     groups, checked, toggle,
+    snoozed, toggleSnooze,
     values, setItemValue,
     dates, setItemDate,
     lastResets, resetGroup,
@@ -76,6 +77,8 @@ function App() {
             group={group}
             checked={checked}
             onToggle={toggle}
+            snoozed={snoozed}
+            onToggleSnooze={toggleSnooze}
             onReset={() => resetGroup(group.id)}
             values={values}
             onValueChange={setItemValue}

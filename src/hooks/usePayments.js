@@ -44,6 +44,7 @@ function mergeGroups(saved, defaults) {
 export function usePayments() {
   const [groups, setGroups] = useState(() => mergeGroups(loadState()?.groups, DEFAULT_PAYMENTS));
   const [checked,         setChecked]         = useState(() => loadState()?.checked         ?? {});
+  const [snoozed,         setSnoozed]         = useState(() => loadState()?.snoozed         ?? {});
   const [values,          setValues]          = useState(() => loadState()?.values          ?? {});
   const [lastResets,      setLastResets]      = useState(() => loadState()?.lastResets      ?? {});
   const [dates,           setDates]           = useState(() => loadState()?.dates           ?? {});
@@ -59,11 +60,25 @@ export function usePayments() {
   });
 
   useEffect(() => {
-    saveState({ groups, checked, values, lastResets, dates, sortMode, collapsedGroups });
-  }, [groups, checked, values, lastResets, dates, sortMode, collapsedGroups]);
+    saveState({ groups, checked, snoozed, values, lastResets, dates, sortMode, collapsedGroups });
+  }, [groups, checked, snoozed, values, lastResets, dates, sortMode, collapsedGroups]);
 
+  // Checking an item clears any snooze on it
   const toggle = useCallback((id) => {
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+    setChecked((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      if (next[id]) setSnoozed((s) => ({ ...s, [id]: false }));
+      return next;
+    });
+  }, []);
+
+  // Snoozing an item clears any check on it; toggling off snooze just removes it
+  const toggleSnooze = useCallback((id) => {
+    setSnoozed((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      if (next[id]) setChecked((c) => ({ ...c, [id]: false }));
+      return next;
+    });
   }, []);
 
   const setItemValue = useCallback((id, rawValue) => {
@@ -80,9 +95,15 @@ export function usePayments() {
     setGroups((prev) => {
       const group = prev.find((g) => g.id === groupId);
       if (!group) return prev;
+      const ids = group.items.map((i) => i.id);
       setChecked((c) => {
         const next = { ...c };
-        group.items.forEach((item) => { next[item.id] = false; });
+        ids.forEach((id) => { next[id] = false; });
+        return next;
+      });
+      setSnoozed((s) => {
+        const next = { ...s };
+        ids.forEach((id) => { next[id] = false; });
         return next;
       });
       return prev;
@@ -106,6 +127,7 @@ export function usePayments() {
       )
     );
     setChecked((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
+    setSnoozed((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
     setValues((prev)  => { const n = { ...prev }; delete n[itemId]; return n; });
     setDates((prev)   => { const n = { ...prev }; delete n[itemId]; return n; });
   }, []);
@@ -143,6 +165,7 @@ export function usePayments() {
       if (group) {
         const ids = group.items.map((i) => i.id);
         setChecked((c) => { const n = { ...c }; ids.forEach((id) => delete n[id]); return n; });
+        setSnoozed((s) => { const n = { ...s }; ids.forEach((id) => delete n[id]); return n; });
         setValues((v)  => { const n = { ...v }; ids.forEach((id) => delete n[id]); return n; });
         setDates((d)   => { const n = { ...d }; ids.forEach((id) => delete n[id]); return n; });
       }
@@ -166,6 +189,7 @@ export function usePayments() {
 
   return {
     groups, checked, toggle,
+    snoozed, toggleSnooze,
     values, setItemValue,
     dates, setItemDate,
     lastResets, resetGroup,
