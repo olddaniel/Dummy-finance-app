@@ -19,8 +19,20 @@ function saveState(state) {
   } catch { /* quota exceeded */ }
 }
 
+function mergeGroups(saved, defaults) {
+  if (!saved) return defaults.map((g) => ({ ...g, items: [...g.items] }));
+  // Order follows defaults; existing groups keep their saved items;
+  // new default groups (e.g. Cartão, Reservas) are inserted automatically.
+  return defaults.map((g) => {
+    const savedGroup = saved.find((sg) => sg.id === g.id);
+    if (!savedGroup) return { ...g, items: [...g.items] };
+    // Structural metadata always from defaults; only items come from saved state.
+    return { ...g, items: savedGroup.items };
+  });
+}
+
 export function usePayments() {
-  const [groups,          setGroups]          = useState(() => loadState()?.groups          ?? DEFAULT_PAYMENTS.map((g) => ({ ...g, items: [...g.items] })));
+  const [groups, setGroups] = useState(() => mergeGroups(loadState()?.groups, DEFAULT_PAYMENTS));
   const [checked,         setChecked]         = useState(() => loadState()?.checked         ?? {});
   const [values,          setValues]          = useState(() => loadState()?.values          ?? {});
   const [lastResets,      setLastResets]      = useState(() => loadState()?.lastResets      ?? {});
