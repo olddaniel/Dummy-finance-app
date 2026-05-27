@@ -28,19 +28,28 @@ function normalizeDateMode(g) {
 
 function mergeGroups(saved, defaults) {
   if (!saved) return defaults.map((g) => ({ ...g, items: [...g.items] }));
-  const defaultIds = new Set(defaults.map((g) => g.id));
-  const mergedDefaults = defaults.map((g) => {
-    const s = saved.find((sg) => sg.id === g.id);
-    if (!s) return { ...g, items: [...g.items] };
-    // Spread saved over defaults so the user's renamed title / changed dateMode survive reloads.
-    // Any new fields added to defaults in the future still get picked up via ...g.
-    return { ...g, ...s, dateMode: normalizeDateMode(s) };
+
+  const defaultMap = Object.fromEntries(defaults.map((g) => [g.id, g]));
+  const savedIds   = new Set(saved.map((g) => g.id));
+
+  // Rebuild in saved order — this preserves any user drag-reordering.
+  const result = saved.map((s) => {
+    const d = defaultMap[s.id];
+    if (d) {
+      // Known default group: merge saved data on top so renames / dateMode changes survive,
+      // while new fields added to defaults in the future still get picked up via ...d.
+      return { ...d, ...s, dateMode: normalizeDateMode(s) };
+    }
+    // User-added group
+    return { ...s, dateMode: normalizeDateMode(s) };
   });
-  // preserve user-added groups (not in defaults)
-  const extraGroups = saved
-    .filter((sg) => !defaultIds.has(sg.id))
-    .map((sg) => ({ ...sg, dateMode: normalizeDateMode(sg) }));
-  return [...mergedDefaults, ...extraGroups];
+
+  // Append any brand-new default groups not yet in saved state (e.g. future app updates).
+  const newDefaults = defaults
+    .filter((d) => !savedIds.has(d.id))
+    .map((d) => ({ ...d, items: [...d.items] }));
+
+  return [...result, ...newDefaults];
 }
 
 export function usePayments() {
