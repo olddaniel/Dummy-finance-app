@@ -122,17 +122,34 @@ export function usePayments() {
 
   const setSortMode = useCallback((mode) => setSortModeState(mode), []);
 
-  const VIEW_CYCLE = { closed: "semi", semi: "open", open: "closed" };
-  const toggleGroupCollapsed = useCallback((groupId) => {
+  const VIEW_CYCLE      = { closed: "semi", semi: "open",   open: "closed" };
+  const VIEW_CYCLE_2WAY = { closed: "open", semi: "open",   open: "closed" };
+  const toggleGroupCollapsed = useCallback((groupId, skipSemi = false) => {
     setCollapsedGroups((prev) => {
       const cur = prev[groupId] ?? "open";
-      return { ...prev, [groupId]: VIEW_CYCLE[cur] ?? "open" };
+      const cycle = skipSemi ? VIEW_CYCLE_2WAY : VIEW_CYCLE;
+      return { ...prev, [groupId]: cycle[cur] ?? "open" };
     });
   }, []);
 
   const addGroup = useCallback((title, dateMode) => {
     const id = `group_${Date.now()}`;
     setGroups((prev) => [...prev, { id, title: title.trim(), dateMode, items: [] }]);
+  }, []);
+
+  const removeGroup = useCallback((groupId) => {
+    setGroups((prev) => {
+      const group = prev.find((g) => g.id === groupId);
+      if (group) {
+        const ids = group.items.map((i) => i.id);
+        setChecked((c) => { const n = { ...c }; ids.forEach((id) => delete n[id]); return n; });
+        setValues((v)  => { const n = { ...v }; ids.forEach((id) => delete n[id]); return n; });
+        setDates((d)   => { const n = { ...d }; ids.forEach((id) => delete n[id]); return n; });
+      }
+      return prev.filter((g) => g.id !== groupId);
+    });
+    setCollapsedGroups((prev) => { const n = { ...prev }; delete n[groupId]; return n; });
+    setLastResets((prev)      => { const n = { ...prev }; delete n[groupId]; return n; });
   }, []);
 
   return {
@@ -143,6 +160,6 @@ export function usePayments() {
     addItem, removeItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
-    addGroup,
+    addGroup, removeGroup,
   };
 }

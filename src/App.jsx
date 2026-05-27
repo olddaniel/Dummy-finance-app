@@ -22,7 +22,7 @@ function App() {
     addItem, removeItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
-    addGroup,
+    addGroup, removeGroup,
   } = usePayments();
 
   const [addingGroup, setAddingGroup] = useState(false);
@@ -88,6 +88,7 @@ function App() {
             sortMode={sortMode}
             viewState={collapsedGroups[group.id] ?? "open"}
             onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
+            onRemoveGroup={() => removeGroup(group.id)}
           />
         ))}
 

@@ -86,7 +86,7 @@ export default function PaymentGroup({
       {/* Header */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
-        onClick={isClosed ? onToggleCollapsed : undefined}
+        onClick={isClosed ? () => onToggleCollapsed(total === 0) : undefined}
       >
         <div className="group-title-block">
           <h2 className="group-title">{group.title}</h2>
@@ -105,7 +105,7 @@ export default function PaymentGroup({
         <div className="group-header-right">
           <button
             className={`progress-badge${isSemi ? " semi" : ""}`}
-            onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
+            onClick={(e) => { e.stopPropagation(); onToggleCollapsed(total === 0); }}
             aria-label={
               isClosed ? "Mostrar pendentes" :
               isSemi   ? "Expandir tudo" :
@@ -144,7 +144,7 @@ export default function PaymentGroup({
             />
           ))}
 
-          {adding ? (
+          {!isSemi && (adding ? (
             <li className="item-add-form">
               <input
                 ref={inputRef}
@@ -164,7 +164,7 @@ export default function PaymentGroup({
           ) : (
             <li className="item-add-btn-row">
               <button className="item-add-btn" onClick={() => setAdding(true)}>+ Adicionar conta</button>
-              {!isSemi && (done > 0 || resetDate) && (
+              {(done > 0 || resetDate) && (
                 <button
                   className={`reset-btn${confirmReset ? " confirm" : ""}`}
                   onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
@@ -175,7 +175,7 @@ export default function PaymentGroup({
                 </button>
               )}
             </li>
-          )}
+          ))}
         </ul>
       </div>
     </section>
