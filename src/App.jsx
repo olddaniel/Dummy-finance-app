@@ -66,7 +66,7 @@ function App() {
             onRemoveItem={(itemId) => removeItem(group.id, itemId)}
             onRenameItem={(itemId, label) => renameItem(group.id, itemId, label)}
             sortMode={sortMode}
-            collapsed={!!collapsedGroups[group.id]}
+            viewState={collapsedGroups[group.id] ?? "open"}
             onToggleCollapsed={() => toggleGroupCollapsed(group.id)}
           />
         ))}

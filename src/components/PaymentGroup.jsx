@@ -18,10 +18,11 @@ function ResetIcon() {
   );
 }
 
-function ChevronIcon({ collapsed }) {
+// Three-state chevron: open=down, semi=diagonal, closed=right
+function ChevronIcon({ viewState }) {
   return (
     <svg width="11" height="11" viewBox="0 0 12 12" fill="none"
-      aria-hidden="true" className={`chevron${collapsed ? " collapsed" : ""}`}>
+      aria-hidden="true" className={`chevron chevron-${viewState}`}>
       <path d="M2 4.5l4 4 4-4" stroke="currentColor" strokeWidth="1.6"
         strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -35,7 +36,8 @@ export default function PaymentGroup({
   lastReset,
   onAddItem, onRemoveItem, onRenameItem,
   sortMode,
-  collapsed, onToggleCollapsed,
+  viewState = "open",
+  onToggleCollapsed,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [adding, setAdding]             = useState(false);
@@ -45,6 +47,9 @@ export default function PaymentGroup({
   useEffect(() => {
     if (adding) inputRef.current?.focus();
   }, [adding]);
+
+  const isClosed = viewState === "closed";
+  const isSemi   = viewState === "semi";
 
   // Sorted items
   const sortedItems = useMemo(() => {
@@ -56,6 +61,11 @@ export default function PaymentGroup({
     }
     return group.items;
   }, [group.items, sortMode, values, dates]);
+
+  // In semi mode only show unchecked items
+  const displayItems = isSemi
+    ? sortedItems.filter((item) => !checked[item.id])
+    : sortedItems;
 
   const total   = group.items.length;
   const done    = group.items.filter((item) => checked[item.id]).length;
@@ -83,8 +93,8 @@ export default function PaymentGroup({
     <section className={`payment-group${allDone ? " all-done" : ""}`}>
       {/* Header */}
       <div
-        className={`group-header${collapsed ? " group-header-collapsed" : ""}`}
-        onClick={collapsed ? onToggleCollapsed : undefined}
+        className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
+        onClick={isClosed ? onToggleCollapsed : undefined}
       >
         <div className="group-title-block">
           <h2 className="group-title">{group.title}</h2>
@@ -101,7 +111,7 @@ export default function PaymentGroup({
         </div>
 
         <div className="group-header-right">
-          {!collapsed && (
+          {!isClosed && (
             <button
               className={`reset-btn${confirmReset ? " confirm" : ""}`}
               onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); } else setConfirmReset(true); }}
@@ -113,15 +123,18 @@ export default function PaymentGroup({
           )}
 
           <button
-            className="progress-badge"
+            className={`progress-badge${isSemi ? " semi" : ""}`}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? "Expandir grupo" : "Recolher grupo"}
+            aria-label={
+              isClosed ? "Expandir grupo" :
+              isSemi   ? "Recolher grupo completamente" :
+                         "Mostrar só pendentes"
+            }
           >
             <span className="progress-done">{done}</span>
             <span className="progress-sep">/</span>
             <span className="progress-total">{total}</span>
-            <ChevronIcon collapsed={collapsed} />
+            <ChevronIcon viewState={viewState} />
           </button>
         </div>
       </div>
@@ -132,9 +145,9 @@ export default function PaymentGroup({
       </div>
 
       {/* Collapsible items + add row */}
-      <div className={`item-list-wrapper${collapsed ? " collapsed" : ""}`}>
+      <div className={`item-list-wrapper${isClosed ? " collapsed" : ""}`}>
         <ul className="item-list">
-          {sortedItems.map((item) => (
+          {displayItems.map((item) => (
             <CheckboxItem
               key={item.id}
               label={item.label}

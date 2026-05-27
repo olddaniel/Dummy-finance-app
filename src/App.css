@@ -206,13 +206,21 @@
 .progress-sep   { color: var(--text-muted); font-size: 10px; }
 .progress-total { color: var(--text-muted); }
 
-/* ── Chevron ── */
+/* Semi-unfolded badge gets an accent tint */
+.progress-badge.semi {
+  border-color: var(--accent);
+  background: rgba(108, 123, 255, 0.1);
+}
+
+/* ── Chevron — three states ── */
 .chevron {
   color: var(--text-muted);
   transition: transform 0.25s ease;
   flex-shrink: 0;
 }
-.chevron.collapsed { transform: rotate(-90deg); }
+.chevron-open   { transform: rotate(0deg); }
+.chevron-semi   { transform: rotate(-45deg); }
+.chevron-closed { transform: rotate(-90deg); }
 
 /* ── Per-group progress bar ── */
 .group-progress-bar {

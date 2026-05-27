@@ -26,7 +26,15 @@ export function usePayments() {
   const [lastResets,      setLastResets]      = useState(() => loadState()?.lastResets      ?? {});
   const [dates,           setDates]           = useState(() => loadState()?.dates           ?? {});
   const [sortMode,        setSortModeState]   = useState(() => loadState()?.sortMode        ?? "manual");
-  const [collapsedGroups, setCollapsedGroups] = useState(() => loadState()?.collapsedGroups ?? {});
+  const [collapsedGroups, setCollapsedGroups] = useState(() => {
+    const saved = loadState()?.collapsedGroups ?? {};
+    // migrate old boolean values → "open" | "semi" | "closed"
+    return Object.fromEntries(
+      Object.entries(saved).map(([k, v]) =>
+        [k, v === true ? "closed" : (v === "semi" || v === "closed") ? v : "open"]
+      )
+    );
+  });
 
   useEffect(() => {
     saveState({ groups, checked, values, lastResets, dates, sortMode, collapsedGroups });
@@ -92,8 +100,12 @@ export function usePayments() {
 
   const setSortMode = useCallback((mode) => setSortModeState(mode), []);
 
+  const VIEW_CYCLE = { open: "semi", semi: "closed", closed: "open" };
   const toggleGroupCollapsed = useCallback((groupId) => {
-    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+    setCollapsedGroups((prev) => {
+      const cur = prev[groupId] ?? "open";
+      return { ...prev, [groupId]: VIEW_CYCLE[cur] ?? "open" };
+    });
   }, []);
 
   return {
