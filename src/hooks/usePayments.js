@@ -46,10 +46,15 @@ export function usePayments() {
     return saved?.lastReset ?? null;
   });
 
+  const [values, setValues] = useState(() => {
+    const saved = loadState();
+    return saved?.values ?? {};
+  });
+
   // Persist on every change
   useEffect(() => {
-    saveState({ checked, lastReset });
-  }, [checked, lastReset]);
+    saveState({ checked, lastReset, values });
+  }, [checked, lastReset, values]);
 
   const toggle = useCallback((id) => {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -73,5 +78,10 @@ export function usePayments() {
     setLastReset(new Date().toISOString());
   }, []);
 
-  return { checked, toggle, resetGroup, resetAll, lastReset };
+  const setItemValue = useCallback((id, rawValue) => {
+    const num = parseFloat(rawValue);
+    setValues((prev) => ({ ...prev, [id]: isNaN(num) ? 0 : num }));
+  }, []);
+
+  return { checked, toggle, resetGroup, resetAll, lastReset, values, setItemValue };
 }

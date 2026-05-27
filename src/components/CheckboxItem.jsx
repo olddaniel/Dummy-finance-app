@@ -1,4 +1,4 @@
-export default function CheckboxItem({ label, checked, onChange }) {
+export default function CheckboxItem({ label, checked, onChange, value, onValueChange }) {
   return (
     <li className={`item${checked ? " item-checked" : ""}`}>
       <button
@@ -20,7 +20,23 @@ export default function CheckboxItem({ label, checked, onChange }) {
           </svg>
         )}
       </button>
-      <span className="item-label">{label}</span>
+
+      <span className="item-label" onClick={onChange}>{label}</span>
+
+      {/* Value input — click is isolated so it doesn't toggle the checkbox */}
+      <span className="item-value-wrapper" onClick={(e) => e.stopPropagation()}>
+        <span className="item-value-prefix">R$</span>
+        <input
+          type="number"
+          className="item-value-input"
+          min="0"
+          step="0.01"
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          placeholder="—"
+          aria-label={`Valor estimado: ${label}`}
+        />
+      </span>
     </li>
   );
 }

@@ -16,7 +16,7 @@ function formatDate(iso) {
 }
 
 function App() {
-  const { checked, toggle, resetGroup, resetAll, lastReset } = usePayments();
+  const { checked, toggle, resetGroup, resetAll, lastReset, values, setItemValue } = usePayments();
   const [confirmResetAll, setConfirmResetAll] = useState(false);
 
   const totalItems = DEFAULT_PAYMENTS.reduce((sum, g) => sum + g.items.length, 0);
@@ -81,6 +81,8 @@ function App() {
             checked={checked}
             onToggle={toggle}
             onReset={() => resetGroup(group.id)}
+            values={values}
+            onValueChange={setItemValue}
           />
         ))}
       </main>
