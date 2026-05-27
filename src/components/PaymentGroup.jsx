@@ -56,40 +56,16 @@ export default function PaymentGroup({
   const [newLabel, setNewLabel]         = useState("");
   const inputRef = useRef(null);
 
-  // ── Long-press to drag (collapsed only) ──
-  const lpTimer    = useRef(null);
-  const lpFired    = useRef(false);
-  const lpOrigin   = useRef({ x: 0, y: 0 });
-
-  function startLongPress(e) {
-    if (viewState !== "closed") return;
-    const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
-    const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
-    lpOrigin.current = { x: cx, y: cy };
-    lpFired.current  = false;
-    lpTimer.current  = setTimeout(() => {
-      lpFired.current = true;
-      onDragStart?.(lpOrigin.current.y);
-    }, 450);
-  }
-
-  function cancelLongPress(e) {
-    if (lpTimer.current) {
-      const cx = e?.clientX ?? e?.touches?.[0]?.clientX ?? lpOrigin.current.x;
-      const cy = e?.clientY ?? e?.touches?.[0]?.clientY ?? lpOrigin.current.y;
-      const moved = Math.abs(cx - lpOrigin.current.x) > 8 || Math.abs(cy - lpOrigin.current.y) > 8;
-      if (moved) { clearTimeout(lpTimer.current); lpTimer.current = null; }
-    }
-  }
-
-  function endLongPress() {
-    clearTimeout(lpTimer.current);
-    lpTimer.current = null;
+  // ── Drag handle — immediate drag on pointerdown ──
+  function handleDragHandlePointerDown(e) {
+    e.preventDefault();   // prevent text selection / context menu
+    e.stopPropagation();  // don't bubble to header (would toggle collapse)
+    const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+    onDragStart?.(y);
   }
 
   function handleHeaderClick() {
-    if (lpFired.current) { lpFired.current = false; return; } // swallow click after drag start
-    if (viewState === "closed") onToggleCollapsed(total === 0);
+    onToggleCollapsed(total === 0);
   }
 
   // ── Edit panel state ──
@@ -168,10 +144,6 @@ export default function PaymentGroup({
       {/* Header */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
-        onPointerDown={startLongPress}
-        onPointerMove={cancelLongPress}
-        onPointerUp={endLongPress}
-        onPointerCancel={endLongPress}
         onClick={handleHeaderClick}
       >
         <div className="group-title-block">
@@ -205,11 +177,14 @@ export default function PaymentGroup({
         </div>
 
         <div className="group-header-right">
-          {isClosed && (
-            <span className="group-drag-handle" aria-hidden="true">
-              <DragHandleIcon />
-            </span>
-          )}
+          <span
+            className="group-drag-handle"
+            onPointerDown={handleDragHandlePointerDown}
+            role="button"
+            aria-label="Arrastar para reordenar"
+          >
+            <DragHandleIcon />
+          </span>
           <button
             className={`progress-badge${isSemi ? " semi" : ""}`}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(total === 0); }}
