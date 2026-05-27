@@ -128,16 +128,14 @@ export default function PaymentGroup({
   }
 
   return (
-    <section
-      className={`payment-group${allDone ? " all-done" : ""}${isEditing ? " editing" : ""}`}
-      onTouchStart={handleGroupTouchStart}
-      onTouchMove={handleGroupTouchMove}
-      onTouchEnd={handleGroupTouchEnd}
-    >
-      {/* Header */}
+    <section className={`payment-group${allDone ? " all-done" : ""}${isEditing ? " editing" : ""}`}>
+      {/* Header — swipe target for edit mode */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
         onClick={isClosed ? () => onToggleCollapsed(total === 0) : undefined}
+        onTouchStart={handleGroupTouchStart}
+        onTouchMove={handleGroupTouchMove}
+        onTouchEnd={handleGroupTouchEnd}
       >
         <div className="group-title-block">
           <h2 className="group-title">{group.title}</h2>
