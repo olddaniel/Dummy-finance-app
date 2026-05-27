@@ -17,6 +17,13 @@ export const DEFAULT_PAYMENTS = [
     ],
   },
   {
+    id: "card",
+    title: "Cartão",
+    cycle: "monthly",
+    noDates: true,
+    items: [],
+  },
+  {
     id: "yearly",
     title: "Anuais",
     cycle: "yearly",

@@ -17,6 +17,7 @@ export default function CheckboxItem({
   label, checked, onChange,
   value, onValueChange,
   dueDate, onDateChange, groupCycle,
+  showDate = true,
   onRemove, onRename,
 }) {
   // ── Swipe ──
@@ -112,22 +113,24 @@ export default function CheckboxItem({
 
         {/* Date + Value — grouped on the right */}
         <span className="item-right" onClick={(e) => e.stopPropagation()}>
-          <select
-            className={`item-date-select${dueDate ? " has-value" : ""}`}
-            value={dueDate ?? ""}
-            onChange={(e) => onDateChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
-            aria-label={groupCycle === "monthly" ? "Dia do vencimento" : "Mês do vencimento"}
-          >
-            <option value="">—</option>
-            {groupCycle === "monthly"
-              ? Array.from({ length: 31 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1}</option>
-                ))
-              : MONTHS.map((m, i) => (
-                  <option key={i + 1} value={i + 1}>{m}</option>
-                ))
-            }
-          </select>
+          {showDate && (
+            <select
+              className={`item-date-select${dueDate ? " has-value" : ""}`}
+              value={dueDate ?? ""}
+              onChange={(e) => onDateChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
+              aria-label={groupCycle === "monthly" ? "Dia do vencimento" : "Mês do vencimento"}
+            >
+              <option value="">—</option>
+              {groupCycle === "monthly"
+                ? Array.from({ length: 31 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))
+                : MONTHS.map((m, i) => (
+                    <option key={i + 1} value={i + 1}>{m}</option>
+                  ))
+              }
+            </select>
+          )}
 
           <span className="item-value-wrapper">
             <span className="item-value-prefix">R$</span>
