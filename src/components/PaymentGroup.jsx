@@ -115,9 +115,9 @@ export default function PaymentGroup({
             className={`progress-badge${isSemi ? " semi" : ""}`}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
             aria-label={
-              isClosed ? "Expandir grupo" :
-              isSemi   ? "Recolher grupo completamente" :
-                         "Mostrar só pendentes"
+              isClosed ? "Mostrar pendentes" :
+              isSemi   ? "Expandir tudo" :
+                         "Recolher grupo"
             }
           >
             <span className="progress-done">{done}</span>

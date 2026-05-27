@@ -100,7 +100,7 @@ export function usePayments() {
 
   const setSortMode = useCallback((mode) => setSortModeState(mode), []);
 
-  const VIEW_CYCLE = { open: "semi", semi: "closed", closed: "open" };
+  const VIEW_CYCLE = { closed: "semi", semi: "open", open: "closed" };
   const toggleGroupCollapsed = useCallback((groupId) => {
     setCollapsedGroups((prev) => {
       const cur = prev[groupId] ?? "open";
