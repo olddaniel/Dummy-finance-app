@@ -31,40 +31,55 @@ export default function PaymentGroup({
   viewState = "open",
   onToggleCollapsed,
   onRemoveGroup,
+  onRenameGroup,
+  onChangeDateMode,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [adding, setAdding]             = useState(false);
   const [newLabel, setNewLabel]         = useState("");
   const inputRef = useRef(null);
 
-  // ── Group swipe-to-delete ──
-  const DELETE_WIDTH = 88;
-
-  const [swipeOffset,  setSwipeOffset]  = useState(0);
-  const [swipeAnimate, setSwipeAnimate] = useState(false);
-  const swipeTouch = useRef({ x: 0, y: 0, dir: null });
-  const groupRevealed = swipeOffset <= -(DELETE_WIDTH - 1);
-
-  function snapGroup(x) { setSwipeAnimate(true); setSwipeOffset(x); }
+  // ── Group swipe-to-edit ──
+  const [isEditing, setIsEditing] = useState(false);
+  const swipeTouch = useRef({ startX: 0, startY: 0, curX: 0, dir: null });
+  const SWIPE_THRESHOLD = 55;
 
   function handleGroupTouchStart(e) {
-    swipeTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null };
-    setSwipeAnimate(false);
+    swipeTouch.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, curX: e.touches[0].clientX, dir: null };
   }
   function handleGroupTouchMove(e) {
-    const dx = e.touches[0].clientX - swipeTouch.current.x;
-    const dy = e.touches[0].clientY - swipeTouch.current.y;
+    const dx = e.touches[0].clientX - swipeTouch.current.startX;
+    const dy = e.touches[0].clientY - swipeTouch.current.startY;
+    swipeTouch.current.curX = e.touches[0].clientX;
     if (swipeTouch.current.dir === null) {
       if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
       swipeTouch.current.dir = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
     }
-    if (swipeTouch.current.dir !== "h") return;
-    const base = groupRevealed ? -DELETE_WIDTH : 0;
-    setSwipeOffset(Math.max(-DELETE_WIDTH, Math.min(0, base + dx)));
   }
   function handleGroupTouchEnd() {
     if (swipeTouch.current.dir !== "h") return;
-    snapGroup(swipeOffset <= -(DELETE_WIDTH / 2) ? -DELETE_WIDTH : 0);
+    const dx = swipeTouch.current.curX - swipeTouch.current.startX;
+    if (dx < -SWIPE_THRESHOLD) setIsEditing(true);   // swipe left → open edit
+    if (dx >  SWIPE_THRESHOLD) setIsEditing(false);  // swipe right → close edit
+  }
+
+  // ── Edit panel state ──
+  const [editName, setEditName]   = useState(group.title);
+  const [editMode, setEditMode]   = useState(group.dateMode);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    if (isEditing) {
+      setEditName(group.title);
+      setEditMode(group.dateMode);
+      setConfirmDelete(false);
+    }
+  }, [isEditing, group.title, group.dateMode]);
+
+  function saveGroupEdit() {
+    if (editName.trim() && editName.trim() !== group.title) onRenameGroup(editName.trim());
+    if (editMode !== group.dateMode) onChangeDateMode(editMode);
+    setIsEditing(false);
   }
 
   useEffect(() => {
@@ -113,31 +128,12 @@ export default function PaymentGroup({
   }
 
   return (
-    <div className="group-outer">
-      <button
-        className="group-delete-zone"
-        onClick={onRemoveGroup}
-        tabIndex={groupRevealed ? 0 : -1}
-        aria-label={`Excluir grupo ${group.title}`}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span>Excluir</span>
-      </button>
-
-      <section
-        className={`payment-group${allDone ? " all-done" : ""}`}
-        style={{
-          transform: `translateX(${swipeOffset}px)`,
-          transition: swipeAnimate ? "transform 0.2s ease" : "none",
-        }}
-        onTouchStart={handleGroupTouchStart}
-        onTouchMove={handleGroupTouchMove}
-        onTouchEnd={handleGroupTouchEnd}
-        onClickCapture={groupRevealed ? (e) => { e.stopPropagation(); snapGroup(0); } : undefined}
-      >
+    <section
+      className={`payment-group${allDone ? " all-done" : ""}${isEditing ? " editing" : ""}`}
+      onTouchStart={handleGroupTouchStart}
+      onTouchMove={handleGroupTouchMove}
+      onTouchEnd={handleGroupTouchEnd}
+    >
       {/* Header */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
@@ -178,6 +174,60 @@ export default function PaymentGroup({
       {/* Per-group progress bar */}
       <div className="group-progress-bar">
         <div className="group-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+
+      {/* Edit panel — slides open below header when isEditing */}
+      <div className={`group-edit-panel${isEditing ? " open" : ""}`}>
+        <div className="group-edit-inner">
+
+          {/* Rename */}
+          <input
+            className="group-edit-name-input"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveGroupEdit(); if (e.key === "Escape") setIsEditing(false); }}
+            placeholder="Nome do grupo"
+            maxLength={40}
+          />
+
+          {/* Date mode */}
+          <div className="group-edit-modes">
+            {[
+              { value: "none",   label: "Sem data" },
+              { value: "days",   label: "Dias" },
+              { value: "months", label: "Meses" },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                className={`group-add-mode-btn${editMode === value ? " active" : ""}`}
+                onClick={() => setEditMode(value)}
+                type="button"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Actions row */}
+          <div className="group-edit-actions">
+            {(done > 0 || resetDate) && (
+              <button className="group-edit-action-btn reset" onClick={() => { onReset(); setIsEditing(false); }}>
+                Resetar
+              </button>
+            )}
+            <button
+              className={`group-edit-action-btn delete${confirmDelete ? " confirm" : ""}`}
+              onClick={() => { if (confirmDelete) onRemoveGroup(); else setConfirmDelete(true); }}
+              onBlur={() => setConfirmDelete(false)}
+            >
+              {confirmDelete ? "Confirmar?" : "Excluir grupo"}
+            </button>
+            <button className="group-edit-action-btn save" onClick={saveGroupEdit}>
+              Salvar
+            </button>
+          </div>
+
+        </div>
       </div>
 
       {/* Collapsible items + add row */}
@@ -233,7 +283,6 @@ export default function PaymentGroup({
           ))}
         </ul>
       </div>
-      </section>
-    </div>
+    </section>
   );
 }

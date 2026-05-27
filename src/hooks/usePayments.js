@@ -152,6 +152,18 @@ export function usePayments() {
     setLastResets((prev)      => { const n = { ...prev }; delete n[groupId]; return n; });
   }, []);
 
+  const renameGroup = useCallback((groupId, newTitle) => {
+    setGroups((prev) =>
+      prev.map((g) => g.id === groupId ? { ...g, title: newTitle.trim() } : g)
+    );
+  }, []);
+
+  const changeGroupDateMode = useCallback((groupId, dateMode) => {
+    setGroups((prev) =>
+      prev.map((g) => g.id === groupId ? { ...g, dateMode } : g)
+    );
+  }, []);
+
   return {
     groups, checked, toggle,
     values, setItemValue,
@@ -160,6 +172,6 @@ export function usePayments() {
     addItem, removeItem, renameItem,
     sortMode, setSortMode,
     collapsedGroups, toggleGroupCollapsed,
-    addGroup, removeGroup,
+    addGroup, removeGroup, renameGroup, changeGroupDateMode,
   };
 }

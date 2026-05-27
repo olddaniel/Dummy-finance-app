@@ -65,32 +65,6 @@
   gap: 16px;
 }
 
-/* ── Group swipe-to-delete wrapper ── */
-.group-outer {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius);
-}
-
-.group-delete-zone {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 88px;
-  background: #c0392b;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  border: none;
-  cursor: pointer;
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
 /* ── Payment group card ── */
 .payment-group {
   background: var(--surface);
@@ -262,6 +236,83 @@
 }
 
 .all-done .group-progress-fill { background: var(--green); }
+
+/* ── Group edit panel ── */
+.group-edit-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+  background: var(--surface-hover);
+  border-top: 1px solid transparent;
+}
+.group-edit-panel.open {
+  grid-template-rows: 1fr;
+  border-top-color: var(--border);
+}
+
+.group-edit-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.group-edit-name-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 3px 2px;
+  width: 100%;
+
+  &:focus { outline: none; }
+}
+
+.group-edit-modes {
+  display: flex;
+  gap: 6px;
+}
+
+.group-edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.group-edit-action-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover { background: var(--surface); color: var(--text); }
+
+  &.save {
+    border-color: var(--accent);
+    color: var(--accent);
+    &:hover { background: rgba(108,123,255,0.1); }
+  }
+
+  &.delete {
+    &.confirm { border-color: var(--yellow); color: var(--yellow); background: rgba(245,166,35,0.08); }
+    &:not(.confirm):hover { border-color: #c0392b; color: #c0392b; }
+  }
+
+  &.reset:hover { border-color: var(--text-muted); color: var(--text); }
+}
 
 /* ── Collapsible wrapper ── */
 .item-list-wrapper {
