@@ -82,7 +82,10 @@ export default function PaymentGroup({
   return (
     <section className={`payment-group${allDone ? " all-done" : ""}`}>
       {/* Header */}
-      <div className="group-header">
+      <div
+        className={`group-header${collapsed ? " group-header-collapsed" : ""}`}
+        onClick={collapsed ? onToggleCollapsed : undefined}
+      >
         <div className="group-title-block">
           <h2 className="group-title">{group.title}</h2>
           {totalSum > 0 && (
@@ -111,7 +114,7 @@ export default function PaymentGroup({
 
           <button
             className="progress-badge"
-            onClick={onToggleCollapsed}
+            onClick={(e) => { e.stopPropagation(); onToggleCollapsed(); }}
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expandir grupo" : "Recolher grupo"}
           >

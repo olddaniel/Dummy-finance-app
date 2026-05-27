@@ -85,6 +85,13 @@
   padding: 12px 14px 10px;
 }
 
+.group-header-collapsed {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover { background: var(--surface-hover); }
+}
+
 .group-title-block {
   display: flex;
   flex-direction: column;
