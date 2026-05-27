@@ -196,6 +196,25 @@ export function usePayments() {
     );
   }, []);
 
+  const reorderGroups = useCallback((groupId, toIndex) => {
+    setGroups((prev) => {
+      const from = prev.findIndex((g) => g.id === groupId);
+      if (from === -1 || from === toIndex) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(toIndex, 0, item);
+      return next;
+    });
+  }, []);
+
+  const collapseAllGroups = useCallback((ids) => {
+    setCollapsedGroups((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => { next[id] = "closed"; });
+      return next;
+    });
+  }, []);
+
   const changeGroupDateMode = useCallback((groupId, dateMode) => {
     setGroups((prev) =>
       prev.map((g) => g.id === groupId ? { ...g, dateMode } : g)
@@ -210,7 +229,7 @@ export function usePayments() {
     lastResets, resetGroup,
     addItem, removeItem, restoreItem, renameItem,
     sortMode, setSortMode,
-    collapsedGroups, toggleGroupCollapsed,
-    addGroup, removeGroup, renameGroup, changeGroupDateMode,
+    collapsedGroups, toggleGroupCollapsed, collapseAllGroups,
+    addGroup, removeGroup, renameGroup, changeGroupDateMode, reorderGroups,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { usePayments } from "./hooks/usePayments";
 import PaymentGroup from "./components/PaymentGroup";
 import Toast from "./components/Toast";
@@ -24,8 +24,8 @@ function App() {
     lastResets, resetGroup,
     addItem, removeItem, restoreItem, renameItem,
     sortMode, setSortMode,
-    collapsedGroups, toggleGroupCollapsed,
-    addGroup, removeGroup, renameGroup, changeGroupDateMode,
+    collapsedGroups, toggleGroupCollapsed, collapseAllGroups,
+    addGroup, removeGroup, renameGroup, changeGroupDateMode, reorderGroups,
   } = usePayments();
 
   const [addingGroup, setAddingGroup] = useState(false);
@@ -33,7 +33,7 @@ function App() {
   const [newGroupDateMode, setNewGroupDateMode] = useState("none");
 
   // ── Toast ──
-  const [toast, setToast]     = useState({ visible: false, message: "", undoFn: null });
+  const [toast, setToast]      = useState({ visible: false, message: "", undoFn: null });
   const [toastKey, setToastKey] = useState(0);
   const toastTimeout = useRef(null);
 
@@ -52,6 +52,73 @@ function App() {
     setToast((t) => ({ ...t, visible: false }));
   }
 
+  // ── Drag-to-reorder ──
+  const [draggingId, setDraggingId] = useState(null);
+  const [insertAt,   setInsertAt]   = useState(null);
+  const groupEls  = useRef({});   // groupId → DOM element
+  const dragState = useRef(null); // live copy to avoid stale closures
+
+  // Derive display order during drag (live visual reorder)
+  const orderedGroups = useMemo(() => {
+    if (!draggingId || insertAt === null) return groups;
+    const from = groups.findIndex((g) => g.id === draggingId);
+    if (from === -1) return groups;
+    const arr = [...groups];
+    const [item] = arr.splice(from, 1);
+    arr.splice(insertAt, 0, item);
+    return arr;
+  }, [groups, draggingId, insertAt]);
+
+  function handleGroupDragStart(groupId) {
+    const idx = groups.findIndex((g) => g.id === groupId);
+    dragState.current = { groupId, insertAt: idx, groups };
+    setDraggingId(groupId);
+    setInsertAt(idx);
+    collapseAllGroups(groups.map((g) => g.id));
+  }
+
+  useEffect(() => {
+    if (!draggingId) return;
+
+    function onMove(e) {
+      if (e.cancelable) e.preventDefault();
+      const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+      const { groups: g } = dragState.current;
+      let next = 0;
+      for (let i = 0; i < g.length; i++) {
+        const el = groupEls.current[g[i].id];
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (y > rect.top + rect.height / 2) next = i + 1;
+      }
+      next = Math.max(0, Math.min(next, g.length - 1));
+      dragState.current.insertAt = next;
+      setInsertAt(next);
+    }
+
+    function onEnd() {
+      const { groupId, insertAt: finalIdx } = dragState.current;
+      reorderGroups(groupId, finalIdx);
+      dragState.current = null;
+      setDraggingId(null);
+      setInsertAt(null);
+    }
+
+    // pointer events handle both mouse and touch uniformly
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup",   onEnd);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup",   onEnd);
+    };
+  }, [draggingId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep dragState.groups in sync while drag is live (groups shouldn't change
+  // during drag, but keeps the ref fresh just in case)
+  useEffect(() => {
+    if (dragState.current) dragState.current.groups = groups;
+  }, [groups]);
+
   // ── Helpers ──
   function findItem(itemId) {
     for (const group of groups) {
@@ -61,10 +128,9 @@ function App() {
     return null;
   }
 
-  // Wrapped remove — fires instantly, shows undo toast
   function handleRemoveItem(groupId, itemId) {
-    const group  = groups.find((g) => g.id === groupId);
-    const index  = group?.items.findIndex((i) => i.id === itemId) ?? -1;
+    const group = groups.find((g) => g.id === groupId);
+    const index = group?.items.findIndex((i) => i.id === itemId) ?? -1;
     const item  = group?.items[index];
     const value = values[itemId];
     const date  = dates[itemId];
@@ -74,7 +140,6 @@ function App() {
     }
   }
 
-  // Wrapped check — shows undo toast only when checking (not unchecking)
   function handleToggle(itemId) {
     const wasChecked = !!checked[itemId];
     toggle(itemId);
@@ -85,14 +150,12 @@ function App() {
     }
   }
 
-  // Wrapped snooze — shows undo toast only when snoozing (not un-snoozing)
   function handleToggleSnooze(itemId) {
     const wasSnoozed = !!snoozed[itemId];
     toggleSnooze(itemId);
     if (!wasSnoozed) {
       const found = findItem(itemId);
       const label = found?.item.label ?? "Conta";
-      // undo calls toggleSnooze directly to avoid re-showing a toast
       showToast(`"${label}" adiada`, () => toggleSnooze(itemId));
     }
   }
@@ -138,10 +201,13 @@ function App() {
       </header>
 
       <main className="main">
-        {groups.map((group) => (
+        {orderedGroups.map((group) => (
           <PaymentGroup
             key={group.id}
             group={group}
+            groupRef={(el) => { groupEls.current[group.id] = el; }}
+            onDragStart={() => handleGroupDragStart(group.id)}
+            isDragging={draggingId === group.id}
             checked={checked}
             onToggle={(id) => handleToggle(id)}
             snoozed={snoozed}

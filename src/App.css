@@ -784,3 +784,23 @@
   from { width: 100%; }
   to   { width: 0%;   }
 }
+
+/* ── Drag-to-reorder ── */
+.group-drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  opacity: 0.45;
+  padding: 2px 4px;
+  cursor: grab;
+}
+
+.payment-group.dragging {
+  opacity: 0.55;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  transform: scale(1.02);
+  border-color: var(--accent);
+  z-index: 10;
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}

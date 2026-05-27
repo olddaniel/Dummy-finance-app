@@ -21,6 +21,19 @@ function ChevronIcon({ viewState }) {
   );
 }
 
+function DragHandleIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <circle cx="4" cy="3" r="1" fill="currentColor"/>
+      <circle cx="8" cy="3" r="1" fill="currentColor"/>
+      <circle cx="4" cy="6" r="1" fill="currentColor"/>
+      <circle cx="8" cy="6" r="1" fill="currentColor"/>
+      <circle cx="4" cy="9" r="1" fill="currentColor"/>
+      <circle cx="8" cy="9" r="1" fill="currentColor"/>
+    </svg>
+  );
+}
+
 export default function PaymentGroup({
   group, checked, onToggle, onReset,
   snoozed, onToggleSnooze,
@@ -34,11 +47,50 @@ export default function PaymentGroup({
   onRemoveGroup,
   onRenameGroup,
   onChangeDateMode,
+  groupRef,
+  onDragStart,
+  isDragging,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [adding, setAdding]             = useState(false);
   const [newLabel, setNewLabel]         = useState("");
   const inputRef = useRef(null);
+
+  // ── Long-press to drag (collapsed only) ──
+  const lpTimer    = useRef(null);
+  const lpFired    = useRef(false);
+  const lpOrigin   = useRef({ x: 0, y: 0 });
+
+  function startLongPress(e) {
+    if (viewState !== "closed") return;
+    const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+    lpOrigin.current = { x: cx, y: cy };
+    lpFired.current  = false;
+    lpTimer.current  = setTimeout(() => {
+      lpFired.current = true;
+      onDragStart?.();
+    }, 450);
+  }
+
+  function cancelLongPress(e) {
+    if (lpTimer.current) {
+      const cx = e?.clientX ?? e?.touches?.[0]?.clientX ?? lpOrigin.current.x;
+      const cy = e?.clientY ?? e?.touches?.[0]?.clientY ?? lpOrigin.current.y;
+      const moved = Math.abs(cx - lpOrigin.current.x) > 8 || Math.abs(cy - lpOrigin.current.y) > 8;
+      if (moved) { clearTimeout(lpTimer.current); lpTimer.current = null; }
+    }
+  }
+
+  function endLongPress() {
+    clearTimeout(lpTimer.current);
+    lpTimer.current = null;
+  }
+
+  function handleHeaderClick() {
+    if (lpFired.current) { lpFired.current = false; return; } // swallow click after drag start
+    if (viewState === "closed") onToggleCollapsed(total === 0);
+  }
 
   // ── Edit panel state ──
   const [isEditing, setIsEditing] = useState(false);
@@ -109,11 +161,18 @@ export default function PaymentGroup({
   }
 
   return (
-    <section className={`payment-group${allDone ? " all-done" : ""}${isEditing ? " editing" : ""}`}>
+    <section
+      ref={groupRef}
+      className={`payment-group${allDone ? " all-done" : ""}${isEditing ? " editing" : ""}${isDragging ? " dragging" : ""}`}
+    >
       {/* Header */}
       <div
         className={`group-header${isClosed ? " group-header-collapsed" : ""}`}
-        onClick={isClosed ? () => onToggleCollapsed(total === 0) : undefined}
+        onPointerDown={startLongPress}
+        onPointerMove={cancelLongPress}
+        onPointerUp={endLongPress}
+        onPointerCancel={endLongPress}
+        onClick={handleHeaderClick}
       >
         <div className="group-title-block">
           <div className="group-title-row">
@@ -146,6 +205,11 @@ export default function PaymentGroup({
         </div>
 
         <div className="group-header-right">
+          {isClosed && (
+            <span className="group-drag-handle" aria-hidden="true">
+              <DragHandleIcon />
+            </span>
+          )}
           <button
             className={`progress-badge${isSemi ? " semi" : ""}`}
             onClick={(e) => { e.stopPropagation(); onToggleCollapsed(total === 0); }}
