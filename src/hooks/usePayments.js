@@ -79,5 +79,15 @@ export function usePayments() {
     setValues((prev)  => { const n = { ...prev }; delete n[itemId]; return n; });
   }, []);
 
-  return { groups, checked, toggle, values, setItemValue, resetGroup, lastResets, addItem, removeItem };
+  const renameItem = useCallback((groupId, itemId, newLabel) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, items: g.items.map((i) => i.id === itemId ? { ...i, label: newLabel } : i) }
+          : g
+      )
+    );
+  }, []);
+
+  return { groups, checked, toggle, values, setItemValue, resetGroup, lastResets, addItem, removeItem, renameItem };
 }

@@ -30,7 +30,7 @@ function ChevronIcon({ collapsed }) {
 
 export default function PaymentGroup({
   group, checked, onToggle, onReset, values, onValueChange,
-  lastReset, onAddItem, onRemoveItem,
+  lastReset, onAddItem, onRemoveItem, onRenameItem,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [collapsed, setCollapsed]       = useState(false);
@@ -133,6 +133,7 @@ export default function PaymentGroup({
               value={values[item.id] || ""}
               onValueChange={(val) => onValueChange(item.id, val)}
               onRemove={() => onRemoveItem(item.id)}
+              onRename={(newLabel) => onRenameItem(item.id, newLabel)}
             />
           ))}
 

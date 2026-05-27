@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const DELETE_WIDTH = 72;
 
@@ -13,11 +13,13 @@ function TrashIcon() {
   );
 }
 
-export default function CheckboxItem({ label, checked, onChange, value, onValueChange, onRemove }) {
-  const [offset, setOffset]   = useState(0);
+export default function CheckboxItem({
+  label, checked, onChange, value, onValueChange, onRemove, onRename,
+}) {
+  // ── Swipe state ──
+  const [offset,  setOffset]  = useState(0);
   const [animate, setAnimate] = useState(false);
   const touch = useRef({ x: 0, y: 0, dir: null });
-
   const revealed = offset <= -(DELETE_WIDTH - 1);
 
   function snap(x) { setAnimate(true); setOffset(x); }
@@ -26,31 +28,45 @@ export default function CheckboxItem({ label, checked, onChange, value, onValueC
     touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: null };
     setAnimate(false);
   }
-
   function handleTouchMove(e) {
     const dx = e.touches[0].clientX - touch.current.x;
     const dy = e.touches[0].clientY - touch.current.y;
-
-    // Decide direction once movement is unambiguous
     if (touch.current.dir === null) {
       if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
       touch.current.dir = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
     }
     if (touch.current.dir !== "h") return;
-
-    // Allow left swipe only (right swipe closes if already revealed)
     const base = revealed ? -DELETE_WIDTH : 0;
     setOffset(Math.max(-DELETE_WIDTH, Math.min(0, base + dx)));
   }
-
   function handleTouchEnd() {
     if (touch.current.dir !== "h") return;
     snap(offset <= -(DELETE_WIDTH / 2) ? -DELETE_WIDTH : 0);
   }
 
+  // ── Edit state ──
+  const [editing, setEditing] = useState(false);
+  const [draft,   setDraft]   = useState(label);
+  const labelInputRef = useRef(null);
+
+  // Keep draft in sync if parent updates the label externally
+  useEffect(() => { if (!editing) setDraft(label); }, [label, editing]);
+
+  useEffect(() => { if (editing) labelInputRef.current?.focus(); }, [editing]);
+
+  function startEdit() { setDraft(label); setEditing(true); }
+
+  function save() {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== label) onRename(trimmed);
+    setEditing(false);
+  }
+
+  function cancel() { setDraft(label); setEditing(false); }
+
   return (
     <li className={`item-outer${checked ? " item-checked" : ""}`}>
-      {/* Delete zone — sits behind the sliding row */}
+      {/* Delete zone */}
       <button
         className="item-delete-zone"
         onClick={onRemove}
@@ -71,12 +87,14 @@ export default function CheckboxItem({ label, checked, onChange, value, onValueC
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        // capture phase: any tap while revealed just closes instead of acting
+        // Any tap while delete zone is revealed just closes it
         onClickCapture={revealed ? (e) => { e.stopPropagation(); snap(0); } : undefined}
+        // Tapping empty row space (outside label/value) toggles checkbox
+        onClick={onChange}
       >
         <button
           className={`item-checkbox${checked ? " checked" : ""}`}
-          onClick={onChange}
+          onClick={(e) => { e.stopPropagation(); onChange(); }}
           role="checkbox"
           aria-checked={checked}
           aria-label={label}
@@ -89,7 +107,30 @@ export default function CheckboxItem({ label, checked, onChange, value, onValueC
           )}
         </button>
 
-        <span className="item-label" onClick={onChange}>{label}</span>
+        {/* Label — tap enters edit mode; stops propagation so row click doesn't toggle */}
+        {editing ? (
+          <input
+            ref={labelInputRef}
+            className="item-label-input"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter")  { e.preventDefault(); save(); }
+              if (e.key === "Escape") { e.preventDefault(); cancel(); }
+            }}
+            onBlur={save}
+            onClick={(e) => e.stopPropagation()}
+            maxLength={60}
+            aria-label="Editar nome da conta"
+          />
+        ) : (
+          <span
+            className="item-label"
+            onClick={(e) => { e.stopPropagation(); startEdit(); }}
+          >
+            {label}
+          </span>
+        )}
 
         <span className="item-value-wrapper" onClick={(e) => e.stopPropagation()}>
           <span className="item-value-prefix">R$</span>

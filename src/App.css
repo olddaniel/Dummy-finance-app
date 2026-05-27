@@ -289,11 +289,26 @@
   cursor: pointer;
 }
 
+/* Inline edit input — replaces the label span */
+.item-label-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 0 2px 1px;
+  min-width: 0;
+
+  &:focus { outline: none; }
+}
+
 /* ── Value input ── */
 .item-value-wrapper {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 0;          /* no gap — prefix and number are visually flush */
   flex-shrink: 0;
 }
 
@@ -311,8 +326,8 @@
   color: var(--text);
   font-size: 13px;
   font-family: inherit;
-  text-align: right;
-  padding: 1px 2px;
+  text-align: left;   /* left-align so number sits flush after R$ */
+  padding: 1px 0;
   transition: border-color 0.15s;
 
   -moz-appearance: textfield;
