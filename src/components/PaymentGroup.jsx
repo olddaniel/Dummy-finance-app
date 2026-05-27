@@ -63,6 +63,8 @@ export default function PaymentGroup({
     const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
     onDragStart?.(y);
   }
+  // Suppress Android long-press vibration/context-menu on the handle
+  function handleDragHandleContextMenu(e) { e.preventDefault(); }
 
   function handleHeaderClick() {
     onToggleCollapsed(total === 0);
@@ -180,6 +182,7 @@ export default function PaymentGroup({
           <span
             className="group-drag-handle"
             onPointerDown={handleDragHandlePointerDown}
+            onContextMenu={handleDragHandleContextMenu}
             role="button"
             aria-label="Arrastar para reordenar"
           >

@@ -56,8 +56,8 @@ function App() {
   // ── Drag-to-reorder ──
   // drag = { groupId, pointerY, offsetY, floatLeft, floatWidth, floatHeight, insertAt }
   const [drag, setDrag] = useState(null);
-  const dragRef   = useRef(null); // live mirror — avoids stale closures in event handlers
-  const groupEls  = useRef({});
+  const dragRef  = useRef(null); // live mirror — avoids stale closures in event handlers
+  const groupEls = useRef({});
 
   // orderedGroups: for the main list. During drag the moving card is replaced
   // by a placeholder at the current insertAt position.
@@ -69,6 +69,9 @@ function App() {
     without.splice(at, 0, { __placeholder: true, height: drag.floatHeight });
     return { orderedGroups: without, draggedGroup: dragged };
   }, [groups, drag]);
+
+  // Keep dragRef.groups in sync so stale-closure handlers see current group list
+  useEffect(() => { if (dragRef.current) dragRef.current.groups = groups; }, [groups]);
 
   function handleGroupDragStart(groupId, pointerY) {
     const el = groupEls.current[groupId];
@@ -85,23 +88,21 @@ function App() {
       insertAt:    idx,
     };
     dragRef.current = { ...state, groups };
-    setDrag(state);
-    collapseAllGroups(groups.map((g) => g.id));
-  }
 
-  useEffect(() => {
-    if (!drag) return;
-
+    // ── Attach listeners SYNCHRONOUSLY (same event-handler tick as pointerdown) ──
+    // This prevents the browser from committing to scroll/context-menu before
+    // our handlers exist. A useEffect fires after re-render — too late on mobile.
     function onMove(e) {
       if (e.cancelable) e.preventDefault();
       const y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
-      const { groupId, groups: snap } = dragRef.current;
-      const without = snap.filter((g) => g.id !== groupId);
+      if (!dragRef.current) return;
+      const { groupId: gid, groups: snap } = dragRef.current;
+      const without = snap.filter((g) => g.id !== gid);
       let insertAt = 0;
       for (let i = 0; i < without.length; i++) {
-        const el = groupEls.current[without[i].id];
-        if (!el) continue;
-        const r = el.getBoundingClientRect();
+        const node = groupEls.current[without[i].id];
+        if (!node) continue;
+        const r = node.getBoundingClientRect();
         if (y > r.top + r.height / 2) insertAt = i + 1;
       }
       insertAt = Math.max(0, Math.min(insertAt, without.length));
@@ -111,33 +112,32 @@ function App() {
     }
 
     function onEnd() {
-      const { groupId, insertAt, groups: snap } = dragRef.current;
-      const without = snap.filter((g) => g.id !== groupId);
-      const dragged = snap.find((g) => g.id === groupId);
+      if (!dragRef.current) return;
+      const { groupId: gid, insertAt, groups: snap } = dragRef.current;
+      const without = snap.filter((g) => g.id !== gid);
+      const dragged = snap.find((g) => g.id === gid);
       if (dragged) {
         without.splice(Math.min(insertAt, without.length), 0, dragged);
         applyGroupOrder(without.map((g) => g.id));
       }
+      window.removeEventListener("pointermove",  onMove);
+      window.removeEventListener("pointerup",    onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+      document.removeEventListener("touchmove",  preventScroll);
       dragRef.current = null;
       setDrag(null);
     }
 
     function preventScroll(e) { if (e.cancelable) e.preventDefault(); }
 
-    window.addEventListener("pointermove",  onMove,        { passive: false });
-    window.addEventListener("pointerup",    onEnd);
-    window.addEventListener("pointercancel",onEnd);
-    document.addEventListener("touchmove",  preventScroll, { passive: false });
-    return () => {
-      window.removeEventListener("pointermove",  onMove);
-      window.removeEventListener("pointerup",    onEnd);
-      window.removeEventListener("pointercancel",onEnd);
-      document.removeEventListener("touchmove",  preventScroll);
-    };
-  }, [drag?.groupId]); // eslint-disable-line react-hooks/exhaustive-deps
+    window.addEventListener("pointermove",   onMove,        { passive: false });
+    window.addEventListener("pointerup",     onEnd);
+    window.addEventListener("pointercancel", onEnd);
+    document.addEventListener("touchmove",   preventScroll, { passive: false });
 
-  // Keep dragRef.groups in sync
-  useEffect(() => { if (dragRef.current) dragRef.current.groups = groups; }, [groups]);
+    setDrag(state);
+    collapseAllGroups(groups.map((g) => g.id));
+  }
 
   // ── Helpers ──
   function findItem(itemId) {
