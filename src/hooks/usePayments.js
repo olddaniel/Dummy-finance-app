@@ -32,7 +32,9 @@ function mergeGroups(saved, defaults) {
   const mergedDefaults = defaults.map((g) => {
     const s = saved.find((sg) => sg.id === g.id);
     if (!s) return { ...g, items: [...g.items] };
-    return { ...g, items: s.items };
+    // Spread saved over defaults so the user's renamed title / changed dateMode survive reloads.
+    // Any new fields added to defaults in the future still get picked up via ...g.
+    return { ...g, ...s, dateMode: normalizeDateMode(s) };
   });
   // preserve user-added groups (not in defaults)
   const extraGroups = saved
